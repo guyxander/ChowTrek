@@ -9,6 +9,10 @@ import {
   signOut
 } from "../repositories/authRepository";
 import { commerceRepository } from "../repositories/commerceRepository";
+import {
+  activateAgentProfile,
+  activateMerchantProfile
+} from "../repositories/roleOnboardingRepository";
 import { hasSupabaseConfig } from "../lib/supabase";
 import { colors } from "../theme/colors";
 import { sharedStyles } from "../theme/sharedStyles";
@@ -60,6 +64,20 @@ export function ProfileScreen({
     if (result.ok) {
       setSignedInIdentity(null);
     }
+    setIsSending(false);
+  }
+
+  async function handleMerchantActivation() {
+    setIsSending(true);
+    const result = await activateMerchantProfile();
+    setMessage(result.message);
+    setIsSending(false);
+  }
+
+  async function handleAgentActivation() {
+    setIsSending(true);
+    const result = await activateAgentProfile();
+    setMessage(result.message);
     setIsSending(false);
   }
 
@@ -133,6 +151,13 @@ export function ProfileScreen({
             </View>
           ))}
         </View>
+        <TouchableOpacity
+          disabled={isSending}
+          onPress={handleMerchantActivation}
+          style={[styles.secondaryButton, isSending ? styles.disabledButton : null]}
+        >
+          <Text style={styles.secondaryButtonText}>Activate merchant profile</Text>
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => onOpenRole("merchant")} style={styles.secondaryButton}>
           <Text style={styles.secondaryButtonText}>Open merchant workspace</Text>
         </TouchableOpacity>
@@ -147,6 +172,13 @@ export function ProfileScreen({
             {opportunity.eligibility}: {opportunity.route}
           </Text>
         ))}
+        <TouchableOpacity
+          disabled={isSending}
+          onPress={handleAgentActivation}
+          style={[styles.secondaryButton, isSending ? styles.disabledButton : null]}
+        >
+          <Text style={styles.secondaryButtonText}>Activate agent profile</Text>
+        </TouchableOpacity>
         <TouchableOpacity onPress={() => onOpenRole("agent")} style={styles.secondaryButton}>
           <Text style={styles.secondaryButtonText}>Open agent workspace</Text>
         </TouchableOpacity>
