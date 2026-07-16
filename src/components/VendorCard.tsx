@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { GestureResponderEvent, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { colors } from "../theme/colors";
 import { sharedStyles } from "../theme/sharedStyles";
@@ -8,12 +8,26 @@ import { StatusBadge } from "./StatusBadge";
 
 type Props = {
   vendor: Vendor;
+  onPress?: (vendorId: string) => void;
   onToggleFollow?: (vendorId: string) => void;
 };
 
-export function VendorCard({ onToggleFollow, vendor }: Props) {
+export function VendorCard({ onPress, onToggleFollow, vendor }: Props) {
+  const formattedDistance =
+    Number.isInteger(vendor.distanceKm) ? `${vendor.distanceKm}` : vendor.distanceKm.toFixed(1);
+
+  const handleFollowPress = (event: GestureResponderEvent) => {
+    event.stopPropagation();
+    onToggleFollow?.(vendor.id);
+  };
+
   return (
-    <View style={styles.vendorCard}>
+    <TouchableOpacity
+      activeOpacity={onPress ? 0.82 : 1}
+      disabled={!onPress}
+      onPress={() => onPress?.(vendor.id)}
+      style={styles.vendorCard}
+    >
       <View style={[styles.vendorHero, { backgroundColor: vendor.color }]}>
         <StatusBadge status={vendor.status} />
         <Text style={styles.vendorHeroText}>{vendor.name}</Text>
@@ -24,13 +38,13 @@ export function VendorCard({ onToggleFollow, vendor }: Props) {
           <Ionicons color={colors.orange} name="star" size={18} />
           <Text style={sharedStyles.metaText}>{vendor.rating}</Text>
           <Ionicons color={colors.deepGreen} name="navigate-outline" size={18} />
-          <Text style={sharedStyles.metaText}>{vendor.distanceKm} km</Text>
+          <Text style={sharedStyles.metaText}>{formattedDistance} km</Text>
           <Text style={styles.totalText}>{vendor.etaMinutes} min</Text>
         </View>
         <View style={styles.followLine}>
           <Text style={styles.followCount}>{vendor.followers.toLocaleString("en-NG")} followers</Text>
           {onToggleFollow ? (
-            <TouchableOpacity onPress={() => onToggleFollow(vendor.id)} style={styles.followButton}>
+            <TouchableOpacity onPress={handleFollowPress} style={styles.followButton}>
               <Ionicons
                 color={vendor.followed ? colors.orange : colors.deepGreen}
                 name={vendor.followed ? "heart" : "heart-outline"}
@@ -48,7 +62,7 @@ export function VendorCard({ onToggleFollow, vendor }: Props) {
           ))}
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 

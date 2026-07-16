@@ -1,22 +1,35 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { ModeChip } from "../components/ModeChip";
 import { SectionHeader } from "../components/SectionHeader";
 import { VendorCard } from "../components/VendorCard";
+import { VendorMenuPanel } from "../components/VendorMenuPanel";
 import { colors } from "../theme/colors";
 import { sharedStyles } from "../theme/sharedStyles";
-import { FulfilmentMode, Vendor } from "../types/domain";
+import { FulfilmentMode, Product, Vendor } from "../types/domain";
 
 type Props = {
+  dataNotice: string;
+  products: Product[];
   vendors: Vendor[];
+  onAddToCart: (product: Product, vendor: Vendor) => void;
+  onShowNotice: (message: string) => void;
   onToggleFollow: (vendorId: string) => void;
 };
 
-export function HomeScreen({ onToggleFollow, vendors }: Props) {
+export function HomeScreen({
+  dataNotice,
+  onAddToCart,
+  onShowNotice,
+  onToggleFollow,
+  products,
+  vendors
+}: Props) {
   const [query, setQuery] = useState("");
   const [selectedMode, setSelectedMode] = useState<FulfilmentMode | null>(null);
+  const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
   const filteredVendors = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
@@ -30,52 +43,99 @@ export function HomeScreen({ onToggleFollow, vendors }: Props) {
       return matchesQuery && matchesMode;
     });
   }, [query, selectedMode, vendors]);
+  const selectedVendor = filteredVendors.find((vendor) => vendor.id === selectedVendorId);
+  const selectedVendorProducts = selectedVendor
+    ? products.filter((product) => product.vendorId === selectedVendor.id)
+    : [];
+
+  const resetFilters = () => {
+    setQuery("");
+    setSelectedMode(null);
+    setSelectedVendorId(null);
+    onShowNotice("Showing all nearby merchants.");
+  };
 
   return (
-    <View>
-      <View style={styles.headerRow}>
-        <View>
-          <Text style={styles.brand}>ChowTrek</Text>
-          <Text style={sharedStyles.subtle}>Around Lekki Phase 1</Text>
-        </View>
-        <Ionicons color={colors.deepGreen} name="notifications-outline" size={26} />
-      </View>
-      <View style={styles.searchBox}>
-        <Ionicons color={colors.muted} name="search" size={20} />
-        <TextInput
-          onChangeText={setQuery}
-          placeholder="Search food, shops, or vendors nearby"
-          placeholderTextColor={colors.muted}
-          style={styles.searchInput}
-          value={query}
-        />
-      </View>
-      <View style={styles.modeRow}>
-        {[
-          { icon: "walk" as const, label: "Trek Delivery" as const },
-          { icon: "storefront" as const, label: "Pickup" as const },
-          { icon: "bicycle" as const, label: "Express" as const }
-        ].map((mode) => (
+    <View style={styles.screen}>
+      <View style={styles.fixedHeader}>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.brand}>ChowTrek</Text>
+            <Text style={sharedStyles.subtle}>Around Lekki Phase 1</Text>
+          </View>
           <TouchableOpacity
-            key={mode.label}
-            onPress={() => setSelectedMode(selectedMode === mode.label ? null : mode.label)}
-            style={selectedMode === mode.label ? styles.activeMode : null}
+            accessibilityLabel="Show notifications"
+            onPress={() => onShowNotice("Notifications can be managed from your profile.")}
+            style={styles.notificationButton}
           >
-            <ModeChip icon={mode.icon} label={mode.label} />
+            <Ionicons color={colors.deepGreen} name="notifications-outline" size={26} />
           </TouchableOpacity>
-        ))}
-      </View>
-      <SectionHeader action="See all" title="Hidden Gems Nearby" />
-      {filteredVendors.length > 0 ? (
-        filteredVendors.map((vendor) => (
-          <VendorCard key={vendor.id} onToggleFollow={onToggleFollow} vendor={vendor} />
-        ))
-      ) : (
-        <View style={sharedStyles.card}>
-          <Text style={sharedStyles.cardTitle}>No nearby matches</Text>
-          <Text style={sharedStyles.bodyCopy}>Try another food, vendor, or delivery mode.</Text>
         </View>
-      )}
+        <Text style={styles.dataNotice}>{dataNotice}</Text>
+        <View style={styles.searchBox}>
+          <Ionicons color={colors.muted} name="search" size={20} />
+          <TextInput
+            onChangeText={(value) => {
+              setQuery(value);
+              setSelectedVendorId(null);
+            }}
+            placeholder="Search food, shops, or vendors nearby"
+            placeholderTextColor={colors.muted}
+            style={styles.searchInput}
+            value={query}
+          />
+        </View>
+        <View style={styles.modeRow}>
+          {[
+            { icon: "walk" as const, label: "Trek Delivery" as const },
+            { icon: "storefront" as const, label: "Pickup" as const },
+            { icon: "bicycle" as const, label: "Express" as const }
+          ].map((mode) => (
+            <TouchableOpacity
+              key={mode.label}
+              onPress={() => {
+                setSelectedMode(selectedMode === mode.label ? null : mode.label);
+                setSelectedVendorId(null);
+              }}
+              style={selectedMode === mode.label ? styles.activeMode : null}
+            >
+              <ModeChip icon={mode.icon} label={mode.label} />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        style={styles.vendorScroll}
+      >
+        <SectionHeader action="See all" onAction={resetFilters} title="Hidden Gems Nearby" />
+        {selectedVendor ? (
+          <VendorMenuPanel
+            onAddToCart={onAddToCart}
+            onClose={() => setSelectedVendorId(null)}
+            onToggleFollow={onToggleFollow}
+            products={selectedVendorProducts}
+            vendor={selectedVendor}
+          />
+        ) : null}
+        {filteredVendors.length > 0 ? (
+          filteredVendors.map((vendor) => (
+            <VendorCard
+              key={vendor.id}
+              onPress={setSelectedVendorId}
+              onToggleFollow={onToggleFollow}
+              vendor={vendor}
+            />
+          ))
+        ) : (
+          <View style={sharedStyles.card}>
+            <Text style={sharedStyles.cardTitle}>No nearby matches</Text>
+            <Text style={sharedStyles.bodyCopy}>Try another food, vendor, or delivery mode.</Text>
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -95,10 +155,31 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 16
   },
+  dataNotice: {
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 12
+  },
+  fixedHeader: {
+    flexShrink: 0
+  },
   modeRow: {
     flexDirection: "row",
     gap: 8,
     marginBottom: 22
+  },
+  notificationButton: {
+    alignItems: "center",
+    height: 44,
+    justifyContent: "center",
+    width: 44
+  },
+  screen: {
+    flex: 1
+  },
+  scrollContent: {
+    paddingBottom: 12
   },
   searchBox: {
     alignItems: "center",
@@ -114,5 +195,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     paddingVertical: 13
+  },
+  vendorScroll: {
+    flex: 1
   }
 });

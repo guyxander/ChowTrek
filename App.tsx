@@ -181,6 +181,32 @@ export default function App() {
     );
   }
 
+  function addProductToCart(product: Product, vendor: Vendor) {
+    setCartItems((currentItems) => {
+      const existingItem = currentItems.find((item) => item.productId === product.id);
+
+      if (existingItem) {
+        return currentItems.map((item) =>
+          item.id === existingItem.id ? { ...item, quantity: item.quantity + 1 } : item
+        );
+      }
+
+      return [
+        ...currentItems,
+        {
+          id: `cart-${product.id}`,
+          productId: product.id,
+          vendorId: vendor.id,
+          productName: product.name,
+          vendorName: vendor.name,
+          quantity: 1,
+          unitPriceNaira: product.priceNaira
+        }
+      ];
+    });
+    setDataNotice(`${product.name} added to your ${vendor.name} cart.`);
+  }
+
   async function checkoutCart(selectedItems = cartItems) {
     const result = await createCheckoutOrder(selectedItems, paymentMode);
 
@@ -315,7 +341,29 @@ export default function App() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
       <View style={styles.app}>
-        {activeTab === "orders" ? (
+        {activeTab === "home" ? (
+          <View style={[styles.content, styles.fixedCustomerContent]}>
+            <HomeScreen
+              dataNotice={dataNotice}
+              onAddToCart={addProductToCart}
+              onShowNotice={setDataNotice}
+              onToggleFollow={toggleVendorFollow}
+              products={merchantProducts}
+              vendors={vendors}
+            />
+          </View>
+        ) : activeTab === "discover" ? (
+          <View style={[styles.content, styles.fixedCustomerContent]}>
+            <DiscoverScreen
+              dataNotice={dataNotice}
+              onAddToCart={addProductToCart}
+              onToggleFollow={toggleVendorFollow}
+              products={merchantProducts}
+              timelineEvents={timelineEvents}
+              vendors={vendors}
+            />
+          </View>
+        ) : activeTab === "orders" ? (
           <View style={[styles.content, styles.ordersContent]}>
             <OrdersScreen
               cartItems={cartItems}
@@ -335,16 +383,6 @@ export default function App() {
             ]}
           >
             {!isRoleDashboard ? <Text style={styles.dataNotice}>{dataNotice}</Text> : null}
-            {activeTab === "home" ? (
-              <HomeScreen onToggleFollow={toggleVendorFollow} vendors={vendors} />
-            ) : null}
-            {activeTab === "discover" ? (
-              <DiscoverScreen
-                onToggleFollow={toggleVendorFollow}
-                timelineEvents={timelineEvents}
-                vendors={vendors}
-              />
-            ) : null}
             {activeTab === "community" ? <CommunityScreen timelineEvents={timelineEvents} /> : null}
             {activeTab === "profile" ? (
               <ProfileScreen
@@ -438,6 +476,9 @@ const styles = StyleSheet.create({
     paddingBottom: 112
   },
   ordersContent: {
+    flex: 1
+  },
+  fixedCustomerContent: {
     flex: 1
   },
   roleNavWrap: {
