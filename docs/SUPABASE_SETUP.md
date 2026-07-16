@@ -67,21 +67,48 @@ Connected project discovered through the Supabase app:
    - `docs/supabase_role_onboarding_patch.sql`
    - `docs/supabase_checkout_patch.sql`
    - `docs/supabase_order_status_patch.sql`
+   - `docs/supabase_payment_media_patch.sql`
+   - `docs/supabase_product_media_storage_patch.sql`
+   - `docs/supabase_delivery_stage_patch.sql`
+   - `docs/supabase_production_hardening_patch.sql`
 
    They allow signed-in users to activate their own merchant/agent records, create customer
-   checkout orders, and let merchant owners update their order queue without weakening public RLS.
+   checkout orders, upload product media, sync push tokens, and let merchant/admin accounts manage
+   only the rows their policies allow.
+
+8. For admin accounts, add the admin role through `raw_app_meta_data`, not user-editable metadata.
+   The production hardening patch expects this app metadata shape:
+
+   ```json
+   { "roles": ["admin"] }
+   ```
+
+9. For Flutterwave, configure a hosted payment URL in `.env.local`:
+
+   ```bash
+   EXPO_PUBLIC_FLUTTERWAVE_PAYMENT_URL=https://your-flutterwave-payment-link
+   ```
+
+   The mobile app creates a pending transaction and opens this URL with `tx_ref`, `amount`, and
+   `currency=NGN`. A webhook/server-side verifier should later mark the transaction/order paid.
 
 ## App Behavior
 
-The app now attempts to load live data from Supabase when both URL and anon key are present.
-If configuration, schema, or RLS is missing, it falls back to mock data and shows a data notice.
+The app attempts to load live data from Supabase when both URL and anon key are present.
+If Supabase is configured but schema, RLS, or network access fails, production builds show a live
+data error state instead of silently falling back to mock data. Mock data is only used when Supabase
+configuration is absent.
 
 After Google sign-in, these app actions attempt to sync with Supabase:
 
 - Follow/unfollow merchants through `vendor_followers`.
 - Toggle notification categories through `notification_preferences`.
 - Change merchant product availability through `products.status`.
+- Save merchant storefront profile details through `merchant_profiles`.
+- Create checkout `orders`, `order_items`, `deliveries`, and `transactions`.
+- Sync push tokens through `device_push_tokens`.
 - Toggle delivery agent availability through `delivery_agent_profiles.is_available`.
 - Claim/release delivery opportunities through `deliveries.agent_id`.
+- Load and approve admin queues through admin-only RLS policies.
 
 Realtime subscriptions refresh the app snapshot when key commerce tables change.

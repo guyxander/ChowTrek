@@ -20,3 +20,12 @@ The landing page download button points to `/api/download`, which increments the
 ```text
 https://github.com/guyxander/ChowTrek/raw/main/public/downloads/chowtrek-latest.apk
 ```
+
+## Production Hosting Recommendation
+
+GitHub accepted the current APK, but it warns once files exceed 50 MB. For production releases,
+publish APKs through GitHub Releases, Supabase Storage, Vercel Blob, or another binary storage
+provider, then update `api/download.js` to redirect to that stable latest-build URL.
+
+Keep `public/downloads/chowtrek-latest.apk` only as the current MVP fallback until the binary host
+is configured.

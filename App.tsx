@@ -1,6 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { BottomNav } from "./src/components/BottomNav";
 import { AgentScreen } from "./src/screens/AgentScreen";
@@ -12,8 +12,11 @@ import { MerchantScreen } from "./src/screens/MerchantScreen";
 import { OrdersScreen } from "./src/screens/OrdersScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { createCheckoutOrder } from "./src/repositories/checkoutRepository";
-import { getMockCommerceSnapshot, loadCommerceSnapshot } from "./src/repositories/commerceSnapshot";
-import { createMerchantProduct } from "./src/repositories/merchantProductRepository";
+import { getInitialCommerceSnapshot, loadCommerceSnapshot } from "./src/repositories/commerceSnapshot";
+import {
+  createMerchantProduct,
+  updateMerchantStorefront
+} from "./src/repositories/merchantProductRepository";
 import { updateMerchantOrderStatus } from "./src/repositories/orderStatusRepository";
 import {
   syncAgentAvailability,
@@ -40,7 +43,7 @@ import {
 } from "./src/types/domain";
 
 export default function App() {
-  const initialSnapshot = getMockCommerceSnapshot();
+  const initialSnapshot = getInitialCommerceSnapshot();
   const [activeTab, setActiveTab] = useState<TabKey>("home");
   const [vendors, setVendors] = useState<Vendor[]>(initialSnapshot.vendors);
   const [cartItems, setCartItems] = useState<CartItem[]>(initialSnapshot.cartItems);
@@ -81,7 +84,9 @@ export default function App() {
         setAgentOpportunities(snapshot.agentOpportunities);
         setDataNotice(
           snapshot.warning ??
-            (snapshot.source === "supabase" ? "Connected to Supabase data." : "Using mock data.")
+            (snapshot.source === "supabase"
+              ? "Connected to live ChowTrek data."
+              : "Using local demo data.")
         );
       });
     };
@@ -102,7 +107,11 @@ export default function App() {
     };
 
     applySnapshot();
-    const unsubscribe = subscribeToCommerceChanges(refreshFromRealtime);
+    const unsubscribe = subscribeToCommerceChanges(refreshFromRealtime, (message) => {
+      if (isMounted) {
+        setDataNotice(message);
+      }
+    });
 
     return () => {
       isMounted = false;
@@ -176,6 +185,9 @@ export default function App() {
 
     if (result.ok) {
       setCartItems([]);
+      if (result.paymentUrl) {
+        await Linking.openURL(result.paymentUrl);
+      }
       const snapshot = await loadCommerceSnapshot();
       setOrders(snapshot.orders);
       setAgentOpportunities(snapshot.agentOpportunities);
@@ -192,6 +204,18 @@ export default function App() {
       setMerchantProducts(snapshot.products);
       setTimelineEvents(snapshot.timelineEvents);
       setVendors(snapshot.vendors);
+    }
+  }
+
+  async function saveMerchantStorefront(storeName: string, storeArea: string) {
+    const result = await updateMerchantStorefront(storeName, storeArea);
+
+    setDataNotice(result.message);
+
+    if (result.ok) {
+      const snapshot = await loadCommerceSnapshot();
+      setVendors(snapshot.vendors);
+      setMerchantProducts(snapshot.products);
     }
   }
 
@@ -322,6 +346,7 @@ export default function App() {
               onCreateProduct={addMerchantProduct}
               onBack={() => setActiveTab("profile")}
               onCycleProductStatus={cycleProductStatus}
+              onSaveStorefront={saveMerchantStorefront}
               onUpdateOrderStatus={changeMerchantOrderStatus}
               orders={orders}
               products={merchantProducts}

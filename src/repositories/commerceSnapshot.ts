@@ -33,6 +33,17 @@ export type CommerceSnapshot = {
   warning?: string;
 };
 
+const emptySnapshot: CommerceSnapshot = {
+  vendors: [],
+  products: [],
+  orders: [],
+  cartItems: [],
+  timelineEvents: [],
+  notificationPreferences: [],
+  agentOpportunities: [],
+  source: "supabase"
+};
+
 export function getMockCommerceSnapshot(): CommerceSnapshot {
   return {
     vendors,
@@ -44,6 +55,15 @@ export function getMockCommerceSnapshot(): CommerceSnapshot {
     agentOpportunities,
     source: "mock"
   };
+}
+
+export function getInitialCommerceSnapshot(): CommerceSnapshot {
+  return hasSupabaseConfig
+    ? {
+        ...emptySnapshot,
+        warning: "Loading live ChowTrek data..."
+      }
+    : getMockCommerceSnapshot();
 }
 
 export async function loadCommerceSnapshot(): Promise<CommerceSnapshot> {
@@ -60,14 +80,22 @@ export async function loadCommerceSnapshot(): Promise<CommerceSnapshot> {
     const supabaseSnapshot = await loadSupabaseCommerceSnapshot();
 
     return {
-      ...mockSnapshot,
+      ...emptySnapshot,
       ...supabaseSnapshot,
-      source: "supabase"
+      cartItems: supabaseSnapshot.cartItems ?? [],
+      notificationPreferences:
+        supabaseSnapshot.notificationPreferences ?? mockSnapshot.notificationPreferences,
+      source: "supabase",
+      warning: "Connected to live ChowTrek data."
     };
   } catch (error) {
     return {
-      ...mockSnapshot,
-      warning: error instanceof Error ? error.message : "Supabase data load failed; using mock data."
+      ...emptySnapshot,
+      notificationPreferences: mockSnapshot.notificationPreferences,
+      warning:
+        error instanceof Error
+          ? `Live data unavailable: ${error.message}`
+          : "Live data unavailable. Please try again."
     };
   }
 }

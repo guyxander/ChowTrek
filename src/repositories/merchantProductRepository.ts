@@ -99,6 +99,55 @@ export async function createMerchantProduct(
   return { ok: true, message: `${trimmedName} added to your storefront.` };
 }
 
+export async function updateMerchantStorefront(
+  businessName: string,
+  neighborhood: string
+): Promise<MerchantProductResult> {
+  const trimmedName = businessName.trim();
+  const trimmedNeighborhood = neighborhood.trim();
+
+  if (!trimmedName) {
+    return { ok: false, message: "Enter a storefront name." };
+  }
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase is not configured for storefront updates." };
+  }
+
+  const {
+    data: { user },
+    error: userError
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    return { ok: false, message: `Session lookup failed: ${userError.message}` };
+  }
+
+  if (!user) {
+    return { ok: false, message: "Sign in with Google before updating your storefront." };
+  }
+
+  const result = await supabase
+    .from("merchant_profiles")
+    .update({
+      business_name: trimmedName,
+      neighborhood: trimmedNeighborhood || null
+    })
+    .eq("owner_id", user.id)
+    .select("id")
+    .maybeSingle();
+
+  if (result.error) {
+    return { ok: false, message: `Storefront update failed: ${result.error.message}` };
+  }
+
+  if (!result.data) {
+    return { ok: false, message: "Activate a merchant profile before saving storefront details." };
+  }
+
+  return { ok: true, message: "Storefront profile synced to Supabase." };
+}
+
 export async function uploadMerchantProductImage(
   uri: string,
   fileName = `product-${Date.now()}.jpg`

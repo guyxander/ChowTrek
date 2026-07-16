@@ -20,6 +20,7 @@ type Props = {
   products: Product[];
   onCreateProduct: (name: string, priceNaira: number, imageUrl?: string) => void;
   onCycleProductStatus: (productId: string) => void;
+  onSaveStorefront: (storeName: string, storeArea: string) => void;
   onUpdateOrderStatus: (orderId: string | undefined, status: OrderStatus) => void;
 };
 
@@ -27,6 +28,7 @@ export function MerchantScreen({
   onBack,
   onCreateProduct,
   onCycleProductStatus,
+  onSaveStorefront,
   onUpdateOrderStatus,
   orders,
   products
@@ -111,6 +113,12 @@ export function MerchantScreen({
             {storeName || "Storefront"} - {storeArea || "Neighborhood"}
           </Text>
         </View>
+        <TouchableOpacity
+          onPress={() => onSaveStorefront(storeName, storeArea)}
+          style={styles.statusButton}
+        >
+          <Text style={styles.statusButtonText}>Save storefront profile</Text>
+        </TouchableOpacity>
       </View>
       <View style={sharedStyles.card}>
         <Text style={sharedStyles.cardTitle}>Add product</Text>

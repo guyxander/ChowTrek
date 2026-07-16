@@ -1,10 +1,12 @@
 import { supabase } from "../lib/supabase";
+import { flutterwavePaymentUrl, isFlutterwaveConfigured } from "../lib/productionConfig";
 import { CartItem, PaymentMode } from "../types/domain";
 
 export type CheckoutResult = {
   ok: boolean;
   message: string;
   orderId?: string;
+  paymentUrl?: string;
 };
 
 const deliveryFeeNaira = 700;
@@ -59,7 +61,7 @@ export async function createCheckoutOrder(
   const totalNaira = subtotalNaira + deliveryFeeNaira;
   const merchantId = cartItems[0].vendorId!;
   const paymentReference = `CHOW-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-  const paymentStatus = paymentMode === "Flutterwave" ? "authorized" : "pay_on_delivery";
+  const paymentStatus = paymentMode === "Flutterwave" ? "pending" : "pay_on_delivery";
 
   const orderResult = await supabase
     .from("orders")
@@ -106,12 +108,41 @@ export async function createCheckoutOrder(
     return { ok: false, message: `Delivery request failed: ${deliveryResult.error.message}` };
   }
 
+  const transactionResult = await supabase.from("transactions").insert({
+    order_id: orderId,
+    provider: paymentMode === "Flutterwave" ? "flutterwave" : "pay_on_delivery",
+    provider_reference: paymentReference,
+    amount_naira: totalNaira,
+    status: paymentStatus
+  });
+
+  if (transactionResult.error) {
+    return { ok: false, message: `Payment record failed: ${transactionResult.error.message}` };
+  }
+
+  const paymentUrl =
+    paymentMode === "Flutterwave" && isFlutterwaveConfigured
+      ? buildFlutterwaveUrl(paymentReference, totalNaira)
+      : undefined;
+
   return {
     ok: true,
     message:
       paymentMode === "Flutterwave"
-        ? `Order #${orderId.slice(0, 8).toUpperCase()} placed with payment reference ${paymentReference}.`
+        ? paymentUrl
+          ? `Order #${orderId.slice(0, 8).toUpperCase()} placed. Complete Flutterwave payment with reference ${paymentReference}.`
+          : `Order #${orderId.slice(0, 8).toUpperCase()} placed as pending. Configure Flutterwave payment URL to collect online payment.`
         : `Order #${orderId.slice(0, 8).toUpperCase()} placed for pay on delivery.`,
-    orderId
+    orderId,
+    paymentUrl
   };
+}
+
+function buildFlutterwaveUrl(reference: string, amountNaira: number): string {
+  const url = new URL(flutterwavePaymentUrl);
+  url.searchParams.set("tx_ref", reference);
+  url.searchParams.set("amount", String(amountNaira));
+  url.searchParams.set("currency", "NGN");
+
+  return url.toString();
 }

@@ -102,3 +102,11 @@ export type AdminMetric = {
   value: string;
   detail: string;
 };
+
+export type AdminQueueItem = {
+  id: string;
+  label: string;
+  detail: string;
+  state: "Open" | "Approved" | "Denied";
+  kind: "merchant" | "agent" | "dispute" | "audit";
+};

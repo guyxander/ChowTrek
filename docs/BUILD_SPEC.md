@@ -26,6 +26,7 @@ This file supersedes the original Flutter-only implementation guardrail.
 
 - Keep UI screens PRD-aligned and Android-first.
 - Keep Supabase behind a small client/repository boundary.
-- Use mock data until the database schema and RLS policies are explicitly implemented and verified.
+- Use live Supabase data when URL and publishable/anon key are configured; use mock data only when
+  Supabase configuration is absent during local UI development.
 - Verify changes with TypeScript checks and a real Expo start/build command before claiming build issues are fixed.
 - Do not apply Supabase schema changes without a connected project and verified RLS test users.

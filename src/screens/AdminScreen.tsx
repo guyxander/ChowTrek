@@ -1,30 +1,54 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { commerceRepository } from "../repositories/commerceRepository";
+import { approveAdminQueueItem, loadAdminDashboard } from "../repositories/adminRepository";
 import { colors } from "../theme/colors";
 import { sharedStyles } from "../theme/sharedStyles";
+import { AdminMetric, AdminQueueItem } from "../types/domain";
 
 type Props = {
   onBack: () => void;
 };
 
 export function AdminScreen({ onBack }: Props) {
-  const metrics = commerceRepository.getAdminMetrics();
-  const [actions, setActions] = useState([
-    { id: "merchant-approval", label: "Review merchant onboarding", done: false },
-    { id: "agent-verification", label: "Verify delivery agent documents", done: false },
-    { id: "dispute", label: "Resolve open customer dispute", done: false },
-    { id: "audit", label: "Export system audit snapshot", done: false }
-  ]);
+  const [metrics, setMetrics] = useState<AdminMetric[]>([]);
+  const [queue, setQueue] = useState<AdminQueueItem[]>([]);
+  const [message, setMessage] = useState("Loading admin queues...");
 
-  function toggleAction(actionId: string) {
-    setActions((currentActions) =>
-      currentActions.map((action) =>
-        action.id === actionId ? { ...action, done: !action.done } : action
-      )
-    );
+  useEffect(() => {
+    let isMounted = true;
+
+    loadAdminDashboard().then((result) => {
+      if (!isMounted) {
+        return;
+      }
+
+      setMetrics(result.metrics);
+      setQueue(result.queue);
+      setMessage(result.message);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  async function refreshDashboard() {
+    const result = await loadAdminDashboard();
+    setMetrics(result.metrics);
+    setQueue(result.queue);
+    setMessage(result.message);
+  }
+
+  async function handleApproval(item: AdminQueueItem) {
+    setMessage(`Reviewing ${item.label}...`);
+    const result = await approveAdminQueueItem(item);
+    setMessage(result.message);
+
+    if (result.ok) {
+      await refreshDashboard();
+    }
   }
 
   return (
@@ -37,6 +61,7 @@ export function AdminScreen({ onBack }: Props) {
       <Text style={sharedStyles.bodyCopy}>
         Master dashboard, merchant onboarding, agent logistics, disputes, and audit controls.
       </Text>
+      <Text style={styles.adminNotice}>{message}</Text>
       <View style={styles.metricGrid}>
         {metrics.map((metric) => (
           <View key={metric.label} style={styles.metricCard}>
@@ -48,20 +73,30 @@ export function AdminScreen({ onBack }: Props) {
       </View>
       <View style={sharedStyles.card}>
         <Text style={sharedStyles.cardTitle}>Admin action queue</Text>
-        {actions.map((action) => (
+        {queue.length === 0 ? (
+          <Text style={sharedStyles.bodyCopy}>
+            No live admin queue items are visible to this account.
+          </Text>
+        ) : null}
+        {queue.map((action) => (
           <TouchableOpacity
             key={action.id}
-            onPress={() => toggleAction(action.id)}
+            onPress={() => handleApproval(action)}
             style={styles.actionItem}
           >
             <Ionicons
-              color={action.done ? colors.emerald : colors.orange}
-              name={action.done ? "checkmark-circle" : "ellipse-outline"}
+              color={action.state === "Approved" ? colors.emerald : colors.orange}
+              name={action.state === "Approved" ? "checkmark-circle" : "ellipse-outline"}
               size={20}
             />
-            <Text style={styles.actionText}>{action.label}</Text>
-            <Text style={[styles.actionState, action.done ? styles.actionDone : null]}>
-              {action.done ? "Done" : "Open"}
+            <View style={styles.actionContent}>
+              <Text style={styles.actionText}>{action.label}</Text>
+              <Text style={sharedStyles.subtle}>{action.detail}</Text>
+            </View>
+            <Text
+              style={[styles.actionState, action.state === "Approved" ? styles.actionDone : null]}
+            >
+              {action.kind}
             </Text>
           </TouchableOpacity>
         ))}
@@ -118,6 +153,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.successSoft,
     color: colors.greenContainer
   },
+  actionContent: {
+    flex: 1
+  },
   actionItem: {
     alignItems: "center",
     borderTopColor: colors.line,
@@ -137,8 +175,13 @@ const styles = StyleSheet.create({
   },
   actionText: {
     color: colors.text,
-    flex: 1,
     fontSize: 14,
     fontWeight: "800"
+  },
+  adminNotice: {
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 10
   }
 });
