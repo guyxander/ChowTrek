@@ -53,14 +53,27 @@ export function AdminScreen({ onBack }: Props) {
 
   return (
     <View>
-      <TouchableOpacity onPress={onBack} style={styles.backButton}>
-        <Ionicons color={colors.deepGreen} name="chevron-back" size={20} />
-        <Text style={styles.backText}>Profile</Text>
-      </TouchableOpacity>
-      <Text style={sharedStyles.screenTitle}>Admin</Text>
-      <Text style={sharedStyles.bodyCopy}>
-        Master dashboard, merchant onboarding, agent logistics, disputes, and audit controls.
-      </Text>
+      <View style={styles.topBar}>
+        <View style={styles.identity}>
+          <View style={styles.adminAvatar}>
+            <Ionicons color="#ffffff" name="shield-checkmark" size={24} />
+          </View>
+          <View>
+            <Text style={styles.roleEyebrow}>Operations workspace</Text>
+            <Text style={styles.dashboardTitle}>ChowTrek Admin</Text>
+          </View>
+        </View>
+        <TouchableOpacity onPress={refreshDashboard} style={styles.refreshButton}>
+          <Ionicons color={colors.deepGreen} name="refresh" size={20} />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.heroCard}>
+        <Text style={styles.kicker}>Command center</Text>
+        <Text style={styles.heroValue}>Approvals and safety</Text>
+        <Text style={styles.heroCopy}>
+          Master dashboard, merchant onboarding, agent logistics, disputes, and audit controls.
+        </Text>
+      </View>
       <Text style={styles.adminNotice}>{message}</Text>
       <View style={styles.metricGrid}>
         {metrics.map((metric) => (
@@ -118,21 +131,53 @@ export function AdminScreen({ onBack }: Props) {
 }
 
 const styles = StyleSheet.create({
-  backButton: {
+  adminAvatar: {
     alignItems: "center",
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    gap: 4,
-    marginBottom: 12,
-    paddingVertical: 4
+    backgroundColor: colors.deepGreen,
+    borderRadius: 14,
+    height: 44,
+    justifyContent: "center",
+    width: 44
   },
-  backText: {
+  dashboardTitle: {
     color: colors.deepGreen,
+    fontSize: 20,
+    fontWeight: "900"
+  },
+  heroCard: {
+    backgroundColor: colors.greenContainer,
+    borderRadius: 16,
+    marginTop: 16,
+    padding: 18
+  },
+  heroCopy: {
+    color: "#95d3ba",
     fontSize: 14,
-    fontWeight: "800"
+    fontWeight: "700",
+    lineHeight: 20,
+    marginTop: 6
+  },
+  heroValue: {
+    color: "#b0f0d6",
+    fontSize: 26,
+    fontWeight: "900",
+    marginTop: 4
+  },
+  identity: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12
+  },
+  kicker: {
+    color: "#95d3ba",
+    fontSize: 12,
+    fontWeight: "900",
+    textTransform: "uppercase"
   },
   metricCard: {
     backgroundColor: colors.card,
+    borderColor: "rgba(191, 201, 195, 0.26)",
+    borderWidth: 1,
     borderRadius: 12,
     flex: 1,
     gap: 4,
@@ -183,5 +228,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     marginTop: 10
+  },
+  refreshButton: {
+    alignItems: "center",
+    backgroundColor: colors.surfaceContainerLow,
+    borderRadius: 12,
+    height: 42,
+    justifyContent: "center",
+    width: 42
+  },
+  roleEyebrow: {
+    color: colors.muted,
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "uppercase"
+  },
+  topBar: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between"
   }
 });

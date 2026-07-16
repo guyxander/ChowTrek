@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Linking, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { BottomNav } from "./src/components/BottomNav";
+import { RoleDashboardNav } from "./src/components/RoleDashboardNav";
 import { AgentScreen } from "./src/screens/AgentScreen";
 import { AdminScreen } from "./src/screens/AdminScreen";
 import { CommunityScreen } from "./src/screens/CommunityScreen";
@@ -45,6 +46,8 @@ import {
 export default function App() {
   const initialSnapshot = getInitialCommerceSnapshot();
   const [activeTab, setActiveTab] = useState<TabKey>("home");
+  const isRoleDashboard =
+    activeTab === "merchant" || activeTab === "agent" || activeTab === "admin";
   const [vendors, setVendors] = useState<Vendor[]>(initialSnapshot.vendors);
   const [cartItems, setCartItems] = useState<CartItem[]>(initialSnapshot.cartItems);
   const [merchantProducts, setMerchantProducts] = useState<Product[]>(initialSnapshot.products);
@@ -311,8 +314,13 @@ export default function App() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
       <View style={styles.app}>
-        <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.dataNotice}>{dataNotice}</Text>
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            isRoleDashboard ? styles.roleDashboardContent : null
+          ]}
+        >
+          {!isRoleDashboard ? <Text style={styles.dataNotice}>{dataNotice}</Text> : null}
           {activeTab === "home" ? (
             <HomeScreen onToggleFollow={toggleVendorFollow} vendors={vendors} />
           ) : null}
@@ -368,7 +376,35 @@ export default function App() {
           ) : null}
           {activeTab === "admin" ? <AdminScreen onBack={() => setActiveTab("profile")} /> : null}
         </ScrollView>
-        <BottomNav activeTab={activeTab} onChange={setActiveTab} />
+        {!isRoleDashboard ? <BottomNav activeTab={activeTab} onChange={setActiveTab} /> : null}
+        {isRoleDashboard ? (
+          <View style={styles.roleNavWrap}>
+            <RoleDashboardNav
+              items={
+                activeTab === "merchant"
+                  ? [
+                      { active: true, icon: "grid", label: "Home" },
+                      { icon: "receipt", label: "Orders" },
+                      { icon: "fast-food", label: "Products" },
+                      { icon: "person", label: "Profile", onPress: () => setActiveTab("profile") }
+                    ]
+                  : activeTab === "agent"
+                    ? [
+                        { active: true, icon: "grid", label: "Home" },
+                        { icon: "car", label: "Orders" },
+                        { icon: "cash", label: "Earnings" },
+                        { icon: "person", label: "Profile", onPress: () => setActiveTab("profile") }
+                      ]
+                    : [
+                        { active: true, icon: "grid", label: "Home" },
+                        { icon: "checkmark-done", label: "Queue" },
+                        { icon: "warning", label: "Audit" },
+                        { icon: "person", label: "Profile", onPress: () => setActiveTab("profile") }
+                      ]
+              }
+            />
+          </View>
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -392,5 +428,16 @@ const styles = StyleSheet.create({
   safeArea: {
     backgroundColor: colors.surface,
     flex: 1
+  },
+  roleDashboardContent: {
+    paddingBottom: 112
+  },
+  roleNavWrap: {
+    bottom: 0,
+    left: 0,
+    paddingBottom: 8,
+    paddingHorizontal: 16,
+    position: "absolute",
+    right: 0
   }
 });

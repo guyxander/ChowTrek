@@ -74,15 +74,28 @@ export function MerchantScreen({
 
   return (
     <View>
-      <TouchableOpacity onPress={onBack} style={styles.backButton}>
-        <Ionicons color={colors.deepGreen} name="chevron-back" size={20} />
-        <Text style={styles.backText}>Profile</Text>
-      </TouchableOpacity>
-      <Text style={sharedStyles.screenTitle}>Merchant</Text>
-      <Text style={sharedStyles.bodyCopy}>
-        Manage storefront details, product media, availability, order queue, handover, and
-        analytics.
-      </Text>
+      <View style={styles.topBar}>
+        <View style={styles.identity}>
+          <View style={styles.storeAvatar}>
+            <Ionicons color="#ffffff" name="storefront" size={24} />
+          </View>
+          <View>
+            <Text style={styles.roleEyebrow}>Merchant workspace</Text>
+            <Text style={styles.dashboardTitle}>ChowTrek Merchant</Text>
+          </View>
+        </View>
+        <View style={styles.openPill}>
+          <View style={styles.openDot} />
+          <Text style={styles.openText}>Open</Text>
+        </View>
+      </View>
+      <View style={styles.heroCard}>
+        <Text style={styles.kicker}>Today at a glance</Text>
+        <Text style={styles.heroValue}>{orders.length} active orders</Text>
+        <Text style={styles.heroCopy}>
+          Storefront, product media, availability, order queue, handover, and analytics.
+        </Text>
+      </View>
       <View style={styles.metricGrid}>
         {metrics.map((metric) => (
           <View key={metric.label} style={styles.metricCard}>
@@ -234,8 +247,45 @@ export function MerchantScreen({
 }
 
 const styles = StyleSheet.create({
+  dashboardTitle: {
+    color: colors.deepGreen,
+    fontSize: 20,
+    fontWeight: "900"
+  },
+  heroCard: {
+    backgroundColor: colors.greenContainer,
+    borderRadius: 16,
+    marginTop: 16,
+    padding: 18
+  },
+  heroCopy: {
+    color: "#95d3ba",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 20,
+    marginTop: 6
+  },
+  heroValue: {
+    color: "#b0f0d6",
+    fontSize: 28,
+    fontWeight: "900",
+    marginTop: 4
+  },
+  identity: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12
+  },
+  kicker: {
+    color: "#95d3ba",
+    fontSize: 12,
+    fontWeight: "900",
+    textTransform: "uppercase"
+  },
   metricCard: {
     backgroundColor: colors.card,
+    borderColor: "rgba(191, 201, 195, 0.26)",
+    borderWidth: 1,
     borderRadius: 12,
     flex: 1,
     padding: 14
@@ -271,18 +321,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "900"
   },
-  backButton: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    gap: 4,
-    marginBottom: 12,
-    paddingVertical: 4
+  openDot: {
+    backgroundColor: colors.deepGreen,
+    borderRadius: 4,
+    height: 8,
+    width: 8
   },
-  backText: {
+  openPill: {
+    alignItems: "center",
+    backgroundColor: "rgba(176, 240, 214, 0.34)",
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7
+  },
+  openText: {
     color: colors.deepGreen,
-    fontSize: 14,
-    fontWeight: "800"
+    fontSize: 12,
+    fontWeight: "900"
+  },
+  roleEyebrow: {
+    color: colors.muted,
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "uppercase"
   },
   metricGrid: {
     flexDirection: "row",
@@ -360,5 +423,18 @@ const styles = StyleSheet.create({
     color: colors.deepGreen,
     fontSize: 13,
     fontWeight: "900"
+  },
+  storeAvatar: {
+    alignItems: "center",
+    backgroundColor: colors.deepGreen,
+    borderRadius: 14,
+    height: 44,
+    justifyContent: "center",
+    width: 44
+  },
+  topBar: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between"
   }
 });
