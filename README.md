@@ -23,4 +23,5 @@ Configure Supabase values in `app.json` under `expo.extra`:
 - `supabaseUrl`
 - `supabaseAnonKey`
 
-The app boots with mock data while Supabase values are absent so UI work can continue safely.
+Release APKs read these values from Expo config. The Supabase publishable/anon key is expected to
+ship in the client; never put a service-role key in app config.
