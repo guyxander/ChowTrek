@@ -5,6 +5,7 @@
     "scheme": "chowtrek",
     "version": "0.1.0",
     "orientation": "portrait",
+    "icon": "./assets/chowtrek-logo.png",
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "ng.chowtrek.app",
@@ -18,6 +19,7 @@
         "android.permission.RECORD_AUDIO"
       ],
       "adaptiveIcon": {
+        "foregroundImage": "./assets/chowtrek-logo.png",
         "backgroundColor": "#003527"
       }
     },

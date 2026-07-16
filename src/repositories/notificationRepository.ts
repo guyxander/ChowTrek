@@ -1,22 +1,19 @@
-import * as Notifications from "expo-notifications";
+import type * as ExpoNotifications from "expo-notifications";
 import { Platform } from "react-native";
+
+declare const require: (moduleName: "expo-notifications") => typeof ExpoNotifications;
 
 type NotificationPermissionResult = {
   ok: boolean;
   message: string;
 };
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-    shouldShowAlert: true,
-    shouldShowBanner: true,
-    shouldShowList: true
-  })
-});
+let notificationsModule: typeof ExpoNotifications | undefined;
+let hasNotificationHandler = false;
 
 export async function requestPushNotificationPermission(): Promise<NotificationPermissionResult> {
+  const Notifications = getNotificationsModule();
+
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("orders", {
       importance: Notifications.AndroidImportance.DEFAULT,
@@ -41,4 +38,25 @@ export async function requestPushNotificationPermission(): Promise<NotificationP
     ok: true,
     message: "Push notifications are enabled for order and delivery updates."
   };
+}
+
+function getNotificationsModule(): typeof ExpoNotifications {
+  if (!notificationsModule) {
+    notificationsModule = require("expo-notifications");
+  }
+
+  if (!hasNotificationHandler) {
+    notificationsModule.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+        shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true
+      })
+    });
+    hasNotificationHandler = true;
+  }
+
+  return notificationsModule;
 }
