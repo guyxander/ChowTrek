@@ -1,0 +1,143 @@
+import { Ionicons } from "@expo/vector-icons";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
+import { CartSummary } from "../components/CartSummary";
+import { OrderCard } from "../components/OrderCard";
+import { colors } from "../theme/colors";
+import { sharedStyles } from "../theme/sharedStyles";
+import { CartItem, Order, PaymentMode } from "../types/domain";
+
+type Props = {
+  cartItems: CartItem[];
+  orders: Order[];
+  paymentMode: PaymentMode;
+  onCartQuantityChange: (itemId: string, delta: number) => void;
+  onPaymentModeChange: (mode: PaymentMode) => void;
+};
+
+export function OrdersScreen({
+  cartItems,
+  onCartQuantityChange,
+  onPaymentModeChange,
+  orders,
+  paymentMode
+}: Props) {
+  return (
+    <View>
+      <Text style={sharedStyles.screenTitle}>Orders</Text>
+      <View style={styles.paymentToggle}>
+        {(["Flutterwave", "Pay on Delivery"] as PaymentMode[]).map((mode) => (
+          <TouchableOpacity
+            key={mode}
+            onPress={() => onPaymentModeChange(mode)}
+            style={[styles.paymentOption, paymentMode === mode ? styles.paymentOptionActive : null]}
+          >
+            <Text
+              style={[
+                styles.paymentOptionText,
+                paymentMode === mode ? styles.paymentOptionTextActive : null
+              ]}
+            >
+              {mode}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <CartSummary
+        items={cartItems}
+        onQuantityChange={onCartQuantityChange}
+        paymentMode={paymentMode}
+      />
+      {orders.map((order) => (
+        <OrderCard key={order.id} order={order} />
+      ))}
+      <View style={sharedStyles.card}>
+        <Text style={sharedStyles.cardTitle}>Live delivery tracking</Text>
+        <Text style={sharedStyles.bodyCopy}>
+          Customer and merchant visibility will use realtime GPS once Supabase and location
+          permissions are connected.
+        </Text>
+        <View style={styles.routeRail}>
+          <RouteStep icon="storefront-outline" label="Merchant" />
+          <View style={styles.routeLine} />
+          <RouteStep icon="bicycle-outline" label="Agent" />
+          <View style={styles.routeLine} />
+          <RouteStep icon="home-outline" label="Customer" />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function RouteStep({
+  icon,
+  label
+}: {
+  icon: "storefront-outline" | "bicycle-outline" | "home-outline";
+  label: string;
+}) {
+  return (
+    <View style={styles.routeStep}>
+      <View style={styles.routeIcon}>
+        <Ionicons color={colors.deepGreen} name={icon} size={18} />
+      </View>
+      <Text style={styles.routeLabel}>{label}</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  paymentOption: {
+    alignItems: "center",
+    borderRadius: 999,
+    flex: 1,
+    paddingVertical: 10
+  },
+  paymentOptionActive: {
+    backgroundColor: colors.deepGreen
+  },
+  paymentOptionText: {
+    color: colors.deepGreen,
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  paymentOptionTextActive: {
+    color: "#ffffff"
+  },
+  paymentToggle: {
+    backgroundColor: colors.successSoft,
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 6,
+    marginBottom: 12,
+    padding: 4
+  },
+  routeIcon: {
+    alignItems: "center",
+    backgroundColor: colors.successSoft,
+    borderRadius: 20,
+    height: 40,
+    justifyContent: "center",
+    width: 40
+  },
+  routeLabel: {
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: "800"
+  },
+  routeLine: {
+    backgroundColor: colors.line,
+    flex: 1,
+    height: 2,
+    marginTop: 20
+  },
+  routeRail: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    marginTop: 18
+  },
+  routeStep: {
+    alignItems: "center",
+    gap: 6
+  }
+});

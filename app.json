@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "ChowTrek",
+    "slug": "chowtrek",
+    "scheme": "chowtrek",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "ng.chowtrek.app",
+      "versionCode": 1,
+      "permissions": [
+        "POST_NOTIFICATIONS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#003527"
+      }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "ChowTrek uses your location to show nearby vendors, pickup options, and delivery routes."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#f97316"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "ChowTrek uses your photo library so merchants can upload product and storefront images."
+        }
+      ]
+    ],
+    "extra": {
+      "market": "Nigeria",
+      "backend": "Supabase",
+      "supabaseUrl": "https://uirbiaursigeohaarrua.supabase.co",
+      "supabaseAnonKey": ""
+    }
+  }
+}
