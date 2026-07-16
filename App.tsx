@@ -13,6 +13,7 @@ import { OrdersScreen } from "./src/screens/OrdersScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { createCheckoutOrder } from "./src/repositories/checkoutRepository";
 import { getMockCommerceSnapshot, loadCommerceSnapshot } from "./src/repositories/commerceSnapshot";
+import { createMerchantProduct } from "./src/repositories/merchantProductRepository";
 import {
   syncAgentAvailability,
   syncDeliveryClaim,
@@ -176,6 +177,19 @@ export default function App() {
     }
   }
 
+  async function addMerchantProduct(name: string, priceNaira: number) {
+    const result = await createMerchantProduct(name, priceNaira);
+
+    setDataNotice(result.message);
+
+    if (result.ok) {
+      const snapshot = await loadCommerceSnapshot();
+      setMerchantProducts(snapshot.products);
+      setTimelineEvents(snapshot.timelineEvents);
+      setVendors(snapshot.vendors);
+    }
+  }
+
   async function cycleProductStatus(productId: string) {
     const nextStatus: Record<FoodStatus, FoodStatus> = {
       Preparing: "Food Ready",
@@ -252,6 +266,7 @@ export default function App() {
           ) : null}
           {activeTab === "merchant" ? (
             <MerchantScreen
+              onCreateProduct={addMerchantProduct}
               onBack={() => setActiveTab("profile")}
               onCycleProductStatus={cycleProductStatus}
               orders={orders}

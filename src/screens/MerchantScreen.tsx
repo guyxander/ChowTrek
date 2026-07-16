@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useState } from "react";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { SectionHeader } from "../components/SectionHeader";
 import { StatusBadge } from "../components/StatusBadge";
@@ -13,11 +14,21 @@ type Props = {
   onBack: () => void;
   orders: Order[];
   products: Product[];
+  onCreateProduct: (name: string, priceNaira: number) => void;
   onCycleProductStatus: (productId: string) => void;
 };
 
-export function MerchantScreen({ onBack, onCycleProductStatus, orders, products }: Props) {
+export function MerchantScreen({
+  onBack,
+  onCreateProduct,
+  onCycleProductStatus,
+  orders,
+  products
+}: Props) {
+  const [productName, setProductName] = useState("");
+  const [productPrice, setProductPrice] = useState("");
   const metrics = commerceRepository.getMerchantMetrics();
+  const priceNaira = Number(productPrice);
 
   return (
     <View>
@@ -37,6 +48,34 @@ export function MerchantScreen({ onBack, onCycleProductStatus, orders, products 
             <Text style={sharedStyles.subtle}>{metric.label}</Text>
           </View>
         ))}
+      </View>
+      <View style={sharedStyles.card}>
+        <Text style={sharedStyles.cardTitle}>Add product</Text>
+        <TextInput
+          onChangeText={setProductName}
+          placeholder="Product name"
+          placeholderTextColor={colors.muted}
+          style={styles.input}
+          value={productName}
+        />
+        <TextInput
+          keyboardType="number-pad"
+          onChangeText={setProductPrice}
+          placeholder="Price in NGN"
+          placeholderTextColor={colors.muted}
+          style={styles.input}
+          value={productPrice}
+        />
+        <TouchableOpacity
+          onPress={() => {
+            onCreateProduct(productName, priceNaira);
+            setProductName("");
+            setProductPrice("");
+          }}
+          style={styles.statusButton}
+        >
+          <Text style={styles.statusButtonText}>Add to storefront</Text>
+        </TouchableOpacity>
       </View>
       <SectionHeader title="Product availability" />
       {products.map((product) => (
@@ -89,6 +128,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     flex: 1,
     padding: 14
+  },
+  input: {
+    backgroundColor: "#eef2ff",
+    borderRadius: 8,
+    color: colors.text,
+    fontSize: 14,
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12
   },
   backButton: {
     alignItems: "center",
