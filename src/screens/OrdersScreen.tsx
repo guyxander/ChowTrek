@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+import { BrandLogo } from "../components/BrandLogo";
 import { OrderCard } from "../components/OrderCard";
 import { colors } from "../theme/colors";
 import { CartItem, Order, PaymentMode } from "../types/domain";
@@ -50,9 +51,12 @@ export function OrdersScreen({
     <View style={styles.screen}>
       <View style={styles.fixedHeader}>
         <View style={styles.topRow}>
-          <View>
-            <Text style={styles.brand}>ChowTrek</Text>
-            <Text style={styles.title}>Orders</Text>
+          <View style={styles.brandLockup}>
+            <BrandLogo size={42} />
+            <View>
+              <Text style={styles.brand}>ChowTrek</Text>
+              <Text style={styles.title}>Orders</Text>
+            </View>
           </View>
           <TouchableOpacity style={styles.iconButton}>
             <Ionicons color={colors.deepGreen} name="receipt" size={22} />
@@ -328,6 +332,11 @@ const styles = StyleSheet.create({
     color: colors.deepGreen,
     fontSize: 14,
     fontWeight: "900"
+  },
+  brandLockup: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10
   },
   cardHeader: {
     alignItems: "center",

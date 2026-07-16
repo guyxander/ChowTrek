@@ -52,14 +52,9 @@ a {
 }
 
 .brand-mark {
-  align-items: center;
-  background: var(--green);
   border-radius: 8px;
-  color: var(--white);
-  display: inline-flex;
-  font-weight: 900;
   height: 36px;
-  justify-content: center;
+  object-fit: contain;
   width: 36px;
 }
 
@@ -193,7 +188,15 @@ h1 {
 .phone-top {
   align-items: center;
   display: flex;
+  gap: 10px;
   justify-content: space-between;
+}
+
+.phone-logo {
+  border-radius: 10px;
+  height: 42px;
+  object-fit: contain;
+  width: 42px;
 }
 
 .location-pill {

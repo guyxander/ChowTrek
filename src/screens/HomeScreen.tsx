@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
+import { BrandLogo } from "../components/BrandLogo";
 import { ModeChip } from "../components/ModeChip";
 import { SectionHeader } from "../components/SectionHeader";
 import { VendorCard } from "../components/VendorCard";
@@ -59,9 +60,12 @@ export function HomeScreen({
     <View style={styles.screen}>
       <View style={styles.fixedHeader}>
         <View style={styles.headerRow}>
-          <View>
-            <Text style={styles.brand}>ChowTrek</Text>
-            <Text style={sharedStyles.subtle}>Around Lekki Phase 1</Text>
+          <View style={styles.brandLockup}>
+            <BrandLogo size={46} />
+            <View>
+              <Text style={styles.brand}>ChowTrek</Text>
+              <Text style={sharedStyles.subtle}>Around Lekki Phase 1</Text>
+            </View>
           </View>
           <TouchableOpacity
             accessibilityLabel="Show notifications"
@@ -148,6 +152,11 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 28,
     fontWeight: "800"
+  },
+  brandLockup: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10
   },
   headerRow: {
     alignItems: "center",
