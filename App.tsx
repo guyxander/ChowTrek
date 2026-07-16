@@ -181,13 +181,14 @@ export default function App() {
     );
   }
 
-  async function checkoutCart() {
-    const result = await createCheckoutOrder(cartItems, paymentMode);
+  async function checkoutCart(selectedItems = cartItems) {
+    const result = await createCheckoutOrder(selectedItems, paymentMode);
 
     setDataNotice(result.message);
 
     if (result.ok) {
-      setCartItems([]);
+      const checkedOutItemIds = new Set(selectedItems.map((item) => item.id));
+      setCartItems((currentItems) => currentItems.filter((item) => !checkedOutItemIds.has(item.id)));
       if (result.paymentUrl) {
         await Linking.openURL(result.paymentUrl);
       }
@@ -314,68 +315,72 @@ export default function App() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
       <View style={styles.app}>
-        <ScrollView
-          contentContainerStyle={[
-            styles.content,
-            isRoleDashboard ? styles.roleDashboardContent : null
-          ]}
-        >
-          {!isRoleDashboard ? <Text style={styles.dataNotice}>{dataNotice}</Text> : null}
-          {activeTab === "home" ? (
-            <HomeScreen onToggleFollow={toggleVendorFollow} vendors={vendors} />
-          ) : null}
-          {activeTab === "discover" ? (
-            <DiscoverScreen
-              onToggleFollow={toggleVendorFollow}
-              timelineEvents={timelineEvents}
-              vendors={vendors}
-            />
-          ) : null}
-          {activeTab === "community" ? <CommunityScreen timelineEvents={timelineEvents} /> : null}
-          {activeTab === "orders" ? (
+        {activeTab === "orders" ? (
+          <View style={[styles.content, styles.ordersContent]}>
             <OrdersScreen
               cartItems={cartItems}
+              dataNotice={dataNotice}
               onCartQuantityChange={changeCartQuantity}
               onCheckout={checkoutCart}
               orders={orders}
               paymentMode={paymentMode}
               onPaymentModeChange={setPaymentMode}
             />
-          ) : null}
-          {activeTab === "profile" ? (
-            <ProfileScreen
-              notificationPreferences={notificationPreferences}
-              onOpenRole={setActiveTab}
-              onToggleNotification={toggleNotificationPreference}
-            />
-          ) : null}
-          {activeTab === "merchant" ? (
-            <MerchantScreen
-              onCreateProduct={addMerchantProduct}
-              onBack={() => setActiveTab("profile")}
-              onCycleProductStatus={cycleProductStatus}
-              onSaveStorefront={saveMerchantStorefront}
-              onUpdateOrderStatus={changeMerchantOrderStatus}
-              orders={orders}
-              products={merchantProducts}
-            />
-          ) : null}
-          {activeTab === "agent" ? (
-            <AgentScreen
-              agentOpportunities={agentOpportunities}
-              claimedOpportunityIds={claimedOpportunityIds}
-              deliveredOpportunityIds={deliveredOpportunityIds}
-              isAvailable={isAgentAvailable}
-              pickedUpOpportunityIds={pickedUpOpportunityIds}
-              onBack={() => setActiveTab("profile")}
-              onMarkDelivered={markOpportunityDelivered}
-              onMarkPickedUp={markOpportunityPickedUp}
-              onToggleAvailability={toggleAgentAvailability}
-              onToggleOpportunityClaim={toggleOpportunityClaim}
-            />
-          ) : null}
-          {activeTab === "admin" ? <AdminScreen onBack={() => setActiveTab("profile")} /> : null}
-        </ScrollView>
+          </View>
+        ) : (
+          <ScrollView
+            contentContainerStyle={[
+              styles.content,
+              isRoleDashboard ? styles.roleDashboardContent : null
+            ]}
+          >
+            {!isRoleDashboard ? <Text style={styles.dataNotice}>{dataNotice}</Text> : null}
+            {activeTab === "home" ? (
+              <HomeScreen onToggleFollow={toggleVendorFollow} vendors={vendors} />
+            ) : null}
+            {activeTab === "discover" ? (
+              <DiscoverScreen
+                onToggleFollow={toggleVendorFollow}
+                timelineEvents={timelineEvents}
+                vendors={vendors}
+              />
+            ) : null}
+            {activeTab === "community" ? <CommunityScreen timelineEvents={timelineEvents} /> : null}
+            {activeTab === "profile" ? (
+              <ProfileScreen
+                notificationPreferences={notificationPreferences}
+                onOpenRole={setActiveTab}
+                onToggleNotification={toggleNotificationPreference}
+              />
+            ) : null}
+            {activeTab === "merchant" ? (
+              <MerchantScreen
+                onCreateProduct={addMerchantProduct}
+                onBack={() => setActiveTab("profile")}
+                onCycleProductStatus={cycleProductStatus}
+                onSaveStorefront={saveMerchantStorefront}
+                onUpdateOrderStatus={changeMerchantOrderStatus}
+                orders={orders}
+                products={merchantProducts}
+              />
+            ) : null}
+            {activeTab === "agent" ? (
+              <AgentScreen
+                agentOpportunities={agentOpportunities}
+                claimedOpportunityIds={claimedOpportunityIds}
+                deliveredOpportunityIds={deliveredOpportunityIds}
+                isAvailable={isAgentAvailable}
+                pickedUpOpportunityIds={pickedUpOpportunityIds}
+                onBack={() => setActiveTab("profile")}
+                onMarkDelivered={markOpportunityDelivered}
+                onMarkPickedUp={markOpportunityPickedUp}
+                onToggleAvailability={toggleAgentAvailability}
+                onToggleOpportunityClaim={toggleOpportunityClaim}
+              />
+            ) : null}
+            {activeTab === "admin" ? <AdminScreen onBack={() => setActiveTab("profile")} /> : null}
+          </ScrollView>
+        )}
         {!isRoleDashboard ? <BottomNav activeTab={activeTab} onChange={setActiveTab} /> : null}
         {isRoleDashboard ? (
           <View style={styles.roleNavWrap}>
@@ -431,6 +436,9 @@ const styles = StyleSheet.create({
   },
   roleDashboardContent: {
     paddingBottom: 112
+  },
+  ordersContent: {
+    flex: 1
   },
   roleNavWrap: {
     bottom: 0,
