@@ -42,7 +42,8 @@
         {
           "photosPermission": "ChowTrek uses your photo library so merchants can upload product and storefront images."
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "extra": {
       "market": "Nigeria",

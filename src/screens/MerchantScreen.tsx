@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
+import type * as ExpoImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
@@ -11,6 +11,8 @@ import { colors } from "../theme/colors";
 import { sharedStyles } from "../theme/sharedStyles";
 import { Order, OrderStatus, Product } from "../types/domain";
 import { formatNaira } from "../utils/money";
+
+declare const require: (moduleName: "expo-image-picker") => typeof ExpoImagePicker;
 
 type Props = {
   onBack: () => void;
@@ -39,6 +41,7 @@ export function MerchantScreen({
   const priceNaira = Number(productPrice);
 
   async function pickAndUploadImage() {
+    const ImagePicker = require("expo-image-picker");
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
