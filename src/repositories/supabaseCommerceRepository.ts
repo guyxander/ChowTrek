@@ -229,6 +229,7 @@ function mapTimelineEvent(row: TimelineRow): TimelineEvent {
 function mapOrder(row: OrderRow): Order {
   return {
     id: row.id.slice(0, 8).toUpperCase(),
+    recordId: row.id,
     vendor: getMerchant(row.merchant_profiles)?.business_name ?? "Local vendor",
     summary: `${fulfilmentModeMap[row.fulfilment_mode]} order`,
     status: orderStatusMap[row.status],

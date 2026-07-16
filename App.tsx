@@ -14,6 +14,7 @@ import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { createCheckoutOrder } from "./src/repositories/checkoutRepository";
 import { getMockCommerceSnapshot, loadCommerceSnapshot } from "./src/repositories/commerceSnapshot";
 import { createMerchantProduct } from "./src/repositories/merchantProductRepository";
+import { updateMerchantOrderStatus } from "./src/repositories/orderStatusRepository";
 import {
   syncAgentAvailability,
   syncDeliveryClaim,
@@ -29,6 +30,7 @@ import {
   FoodStatus,
   NotificationPreference,
   Order,
+  OrderStatus,
   PaymentMode,
   Product,
   TabKey,
@@ -190,6 +192,23 @@ export default function App() {
     }
   }
 
+  async function changeMerchantOrderStatus(orderId: string | undefined, status: OrderStatus) {
+    if (!orderId) {
+      setDataNotice("This order is local-only and cannot be updated in Supabase.");
+      return;
+    }
+
+    const result = await updateMerchantOrderStatus(orderId, status);
+
+    setDataNotice(result.message);
+
+    if (result.ok) {
+      const snapshot = await loadCommerceSnapshot();
+      setOrders(snapshot.orders);
+      setAgentOpportunities(snapshot.agentOpportunities);
+    }
+  }
+
   async function cycleProductStatus(productId: string) {
     const nextStatus: Record<FoodStatus, FoodStatus> = {
       Preparing: "Food Ready",
@@ -269,6 +288,7 @@ export default function App() {
               onCreateProduct={addMerchantProduct}
               onBack={() => setActiveTab("profile")}
               onCycleProductStatus={cycleProductStatus}
+              onUpdateOrderStatus={changeMerchantOrderStatus}
               orders={orders}
               products={merchantProducts}
             />

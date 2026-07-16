@@ -62,9 +62,14 @@ Connected project discovered through the Supabase app:
    pnpm run check:seed
    ```
 
-7. Confirm `docs/supabase_role_onboarding_patch.sql` and `docs/supabase_checkout_patch.sql`
-   have been applied. They allow signed-in users to activate their own merchant/agent records
-   and create customer checkout orders without weakening public RLS.
+7. Confirm these incremental patches have been applied:
+
+   - `docs/supabase_role_onboarding_patch.sql`
+   - `docs/supabase_checkout_patch.sql`
+   - `docs/supabase_order_status_patch.sql`
+
+   They allow signed-in users to activate their own merchant/agent records, create customer
+   checkout orders, and let merchant owners update their order queue without weakening public RLS.
 
 ## App Behavior
 

@@ -7,7 +7,7 @@ import { StatusBadge } from "../components/StatusBadge";
 import { commerceRepository } from "../repositories/commerceRepository";
 import { colors } from "../theme/colors";
 import { sharedStyles } from "../theme/sharedStyles";
-import { Order, Product } from "../types/domain";
+import { Order, OrderStatus, Product } from "../types/domain";
 import { formatNaira } from "../utils/money";
 
 type Props = {
@@ -16,12 +16,14 @@ type Props = {
   products: Product[];
   onCreateProduct: (name: string, priceNaira: number) => void;
   onCycleProductStatus: (productId: string) => void;
+  onUpdateOrderStatus: (orderId: string | undefined, status: OrderStatus) => void;
 };
 
 export function MerchantScreen({
   onBack,
   onCreateProduct,
   onCycleProductStatus,
+  onUpdateOrderStatus,
   orders,
   products
 }: Props) {
@@ -106,9 +108,15 @@ export function MerchantScreen({
             <Text style={styles.queueStatus}>{order.status}</Text>
           </View>
           <View style={styles.actionRow}>
-            <Text style={styles.queueAction}>Accept</Text>
-            <Text style={styles.queueAction}>Mark ready</Text>
-            <Text style={styles.queueAction}>Handover</Text>
+            <TouchableOpacity onPress={() => onUpdateOrderStatus(order.recordId, "Preparing")}>
+              <Text style={styles.queueAction}>Accept</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => onUpdateOrderStatus(order.recordId, "Ready")}>
+              <Text style={styles.queueAction}>Mark ready</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => onUpdateOrderStatus(order.recordId, "In Transit")}>
+              <Text style={styles.queueAction}>Handover</Text>
+            </TouchableOpacity>
           </View>
         </View>
       ))}

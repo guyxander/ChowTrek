@@ -42,6 +42,7 @@ export type TimelineEvent = {
 
 export type Order = {
   id: string;
+  recordId?: string;
   vendor: string;
   summary: string;
   status: OrderStatus;
