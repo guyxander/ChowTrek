@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { commerceRepository } from "../repositories/commerceRepository";
@@ -11,6 +12,20 @@ type Props = {
 
 export function AdminScreen({ onBack }: Props) {
   const metrics = commerceRepository.getAdminMetrics();
+  const [actions, setActions] = useState([
+    { id: "merchant-approval", label: "Review merchant onboarding", done: false },
+    { id: "agent-verification", label: "Verify delivery agent documents", done: false },
+    { id: "dispute", label: "Resolve open customer dispute", done: false },
+    { id: "audit", label: "Export system audit snapshot", done: false }
+  ]);
+
+  function toggleAction(actionId: string) {
+    setActions((currentActions) =>
+      currentActions.map((action) =>
+        action.id === actionId ? { ...action, done: !action.done } : action
+      )
+    );
+  }
 
   return (
     <View>
@@ -29,6 +44,26 @@ export function AdminScreen({ onBack }: Props) {
             <Text style={sharedStyles.cardTitle}>{metric.label}</Text>
             <Text style={sharedStyles.subtle}>{metric.detail}</Text>
           </View>
+        ))}
+      </View>
+      <View style={sharedStyles.card}>
+        <Text style={sharedStyles.cardTitle}>Admin action queue</Text>
+        {actions.map((action) => (
+          <TouchableOpacity
+            key={action.id}
+            onPress={() => toggleAction(action.id)}
+            style={styles.actionItem}
+          >
+            <Ionicons
+              color={action.done ? colors.emerald : colors.orange}
+              name={action.done ? "checkmark-circle" : "ellipse-outline"}
+              size={20}
+            />
+            <Text style={styles.actionText}>{action.label}</Text>
+            <Text style={[styles.actionState, action.done ? styles.actionDone : null]}>
+              {action.done ? "Done" : "Open"}
+            </Text>
+          </TouchableOpacity>
         ))}
       </View>
       <View style={sharedStyles.card}>
@@ -78,5 +113,32 @@ const styles = StyleSheet.create({
     color: colors.orange,
     fontSize: 24,
     fontWeight: "900"
+  },
+  actionDone: {
+    backgroundColor: colors.successSoft,
+    color: colors.greenContainer
+  },
+  actionItem: {
+    alignItems: "center",
+    borderTopColor: colors.line,
+    borderTopWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    paddingVertical: 12
+  },
+  actionState: {
+    backgroundColor: colors.warningSoft,
+    borderRadius: 999,
+    color: colors.orange,
+    fontSize: 12,
+    fontWeight: "900",
+    paddingHorizontal: 10,
+    paddingVertical: 5
+  },
+  actionText: {
+    color: colors.text,
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "800"
   }
 });

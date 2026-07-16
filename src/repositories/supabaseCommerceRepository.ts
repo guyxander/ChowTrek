@@ -22,6 +22,7 @@ type ProductRow = {
   name: string;
   price_naira: number;
   status: "preparing" | "food_ready" | "sold_out";
+  image_url: string | null;
   merchant_profiles?: MerchantRow | MerchantRow[] | null;
 };
 
@@ -39,6 +40,9 @@ type OrderRow = {
   status: "preparing" | "ready" | "in_transit" | "delivered" | "cancelled" | "placed" | "accepted" | "cart";
   fulfilment_mode: "pickup" | "trek_delivery" | "express";
   total_naira: number;
+  payment_mode: "flutterwave" | "pay_on_delivery";
+  payment_status: "pending" | "authorized" | "paid" | "failed" | "pay_on_delivery";
+  payment_reference: string | null;
   created_at: string;
   merchant_profiles?: MerchantRow | MerchantRow[] | null;
 };
@@ -89,6 +93,19 @@ const fulfilmentModeMap = {
   express: "Express"
 } as const;
 
+const paymentModeMap = {
+  flutterwave: "Flutterwave",
+  pay_on_delivery: "Pay on Delivery"
+} as const;
+
+const paymentStatusMap = {
+  pending: "Pending",
+  authorized: "Authorized",
+  paid: "Paid",
+  failed: "Failed",
+  pay_on_delivery: "Pay on Delivery"
+} as const;
+
 const timelineTypeMap = {
   food_ready: "Food Ready",
   new_product: "New Product",
@@ -109,7 +126,7 @@ export async function loadSupabaseCommerceSnapshot(): Promise<Partial<CommerceSn
     supabase.from("merchant_profiles").select("id,business_name,description,neighborhood").limit(20),
     supabase
       .from("products")
-      .select("id,merchant_id,name,price_naira,status,merchant_profiles(id,business_name,description,neighborhood)")
+      .select("id,merchant_id,name,price_naira,status,image_url,merchant_profiles(id,business_name,description,neighborhood)")
       .limit(40),
     supabase
       .from("vendor_timeline_events")
@@ -122,7 +139,7 @@ export async function loadSupabaseCommerceSnapshot(): Promise<Partial<CommerceSn
     ? await Promise.all([
         supabase
           .from("orders")
-          .select("id,status,fulfilment_mode,total_naira,created_at,merchant_profiles(id,business_name,description,neighborhood)")
+          .select("id,status,fulfilment_mode,total_naira,payment_mode,payment_status,payment_reference,created_at,merchant_profiles(id,business_name,description,neighborhood)")
           .order("created_at", { ascending: false })
           .limit(20),
         supabase
@@ -210,7 +227,8 @@ function mapProduct(row: ProductRow): Product {
     vendorId: row.merchant_id,
     name: row.name,
     priceNaira: row.price_naira,
-    status: foodStatusMap[row.status]
+    status: foodStatusMap[row.status],
+    imageUrl: row.image_url ?? undefined
   };
 }
 
@@ -235,7 +253,15 @@ function mapOrder(row: OrderRow): Order {
     status: orderStatusMap[row.status],
     fulfilmentMode: fulfilmentModeMap[row.fulfilment_mode],
     etaMinutes: 15,
-    totalNaira: row.total_naira
+    totalNaira: row.total_naira,
+    paymentMode: paymentModeMap[row.payment_mode],
+    paymentStatus: paymentStatusMap[row.payment_status],
+    paymentReference: row.payment_reference ?? undefined,
+    receiptLines: [
+      `${fulfilmentModeMap[row.fulfilment_mode]} order`,
+      `${paymentModeMap[row.payment_mode]} - ${paymentStatusMap[row.payment_status]}`,
+      `Placed ${minutesSince(row.created_at)} min ago`
+    ]
   };
 }
 

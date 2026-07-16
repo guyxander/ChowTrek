@@ -27,6 +27,13 @@ export function OrdersScreen({
   return (
     <View>
       <Text style={sharedStyles.screenTitle}>Orders</Text>
+      <View style={sharedStyles.card}>
+        <Text style={sharedStyles.cardTitle}>Checkout payments</Text>
+        <Text style={sharedStyles.bodyCopy}>
+          Flutterwave checkout creates a trackable payment reference. Add live Flutterwave keys when
+          the business account is ready; pay on delivery stays available for cash testing.
+        </Text>
+      </View>
       <View style={styles.paymentToggle}>
         {(["Flutterwave", "Pay on Delivery"] as PaymentMode[]).map((mode) => (
           <TouchableOpacity
@@ -57,9 +64,16 @@ export function OrdersScreen({
       >
         <Text style={styles.checkoutButtonText}>Place order</Text>
       </TouchableOpacity>
-      {orders.map((order) => (
-        <OrderCard key={order.id} order={order} />
-      ))}
+      {orders.length > 0 ? (
+        orders.map((order) => <OrderCard key={order.id} order={order} />)
+      ) : (
+        <View style={sharedStyles.card}>
+          <Text style={sharedStyles.cardTitle}>No orders yet</Text>
+          <Text style={sharedStyles.bodyCopy}>
+            Orders you place will show payment status, delivery progress, and receipts here.
+          </Text>
+        </View>
+      )}
       <View style={sharedStyles.card}>
         <Text style={sharedStyles.cardTitle}>Live delivery tracking</Text>
         <Text style={sharedStyles.bodyCopy}>

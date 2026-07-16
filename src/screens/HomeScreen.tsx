@@ -1,12 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { useMemo, useState } from "react";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { ModeChip } from "../components/ModeChip";
 import { SectionHeader } from "../components/SectionHeader";
 import { VendorCard } from "../components/VendorCard";
 import { colors } from "../theme/colors";
 import { sharedStyles } from "../theme/sharedStyles";
-import { Vendor } from "../types/domain";
+import { FulfilmentMode, Vendor } from "../types/domain";
 
 type Props = {
   vendors: Vendor[];
@@ -14,6 +15,21 @@ type Props = {
 };
 
 export function HomeScreen({ onToggleFollow, vendors }: Props) {
+  const [query, setQuery] = useState("");
+  const [selectedMode, setSelectedMode] = useState<FulfilmentMode | null>(null);
+  const filteredVendors = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return vendors.filter((vendor) => {
+      const matchesQuery =
+        normalizedQuery.length === 0 ||
+        vendor.name.toLowerCase().includes(normalizedQuery) ||
+        vendor.category.toLowerCase().includes(normalizedQuery);
+      const matchesMode = selectedMode ? vendor.deliveryModes.includes(selectedMode) : true;
+
+      return matchesQuery && matchesMode;
+    });
+  }, [query, selectedMode, vendors]);
 
   return (
     <View>
@@ -27,25 +43,47 @@ export function HomeScreen({ onToggleFollow, vendors }: Props) {
       <View style={styles.searchBox}>
         <Ionicons color={colors.muted} name="search" size={20} />
         <TextInput
+          onChangeText={setQuery}
           placeholder="Search food, shops, or vendors nearby"
           placeholderTextColor={colors.muted}
           style={styles.searchInput}
+          value={query}
         />
       </View>
       <View style={styles.modeRow}>
-        <ModeChip icon="walk" label="Trek Delivery" />
-        <ModeChip icon="storefront" label="Pickup" />
-        <ModeChip icon="bicycle" label="Express" />
+        {[
+          { icon: "walk" as const, label: "Trek Delivery" as const },
+          { icon: "storefront" as const, label: "Pickup" as const },
+          { icon: "bicycle" as const, label: "Express" as const }
+        ].map((mode) => (
+          <TouchableOpacity
+            key={mode.label}
+            onPress={() => setSelectedMode(selectedMode === mode.label ? null : mode.label)}
+            style={selectedMode === mode.label ? styles.activeMode : null}
+          >
+            <ModeChip icon={mode.icon} label={mode.label} />
+          </TouchableOpacity>
+        ))}
       </View>
       <SectionHeader action="See all" title="Hidden Gems Nearby" />
-      {vendors.map((vendor) => (
-        <VendorCard key={vendor.id} onToggleFollow={onToggleFollow} vendor={vendor} />
-      ))}
+      {filteredVendors.length > 0 ? (
+        filteredVendors.map((vendor) => (
+          <VendorCard key={vendor.id} onToggleFollow={onToggleFollow} vendor={vendor} />
+        ))
+      ) : (
+        <View style={sharedStyles.card}>
+          <Text style={sharedStyles.cardTitle}>No nearby matches</Text>
+          <Text style={sharedStyles.bodyCopy}>Try another food, vendor, or delivery mode.</Text>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  activeMode: {
+    opacity: 0.72
+  },
   brand: {
     color: colors.text,
     fontSize: 28,

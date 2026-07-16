@@ -49,6 +49,10 @@ export type Order = {
   fulfilmentMode: FulfilmentMode;
   etaMinutes: number;
   totalNaira: number;
+  paymentMode?: PaymentMode;
+  paymentStatus?: "Pending" | "Authorized" | "Paid" | "Failed" | "Pay on Delivery";
+  paymentReference?: string;
+  receiptLines?: string[];
 };
 
 export type Product = {
@@ -57,6 +61,7 @@ export type Product = {
   name: string;
   priceNaira: number;
   status: FoodStatus;
+  imageUrl?: string;
 };
 
 export type CartItem = {
@@ -83,6 +88,7 @@ export type AgentOpportunity = {
   payoutNaira: number;
   distanceKm: number;
   eligibility: "Best fit" | "Nearby" | "Watch";
+  stage?: "Open" | "Claimed" | "Picked Up" | "Delivered";
 };
 
 export type NotificationPreference = {

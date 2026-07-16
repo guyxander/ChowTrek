@@ -11,17 +11,25 @@ type Props = {
   agentOpportunities: AgentOpportunity[];
   isAvailable: boolean;
   claimedOpportunityIds: string[];
+  pickedUpOpportunityIds: string[];
+  deliveredOpportunityIds: string[];
   onToggleAvailability: () => void;
   onToggleOpportunityClaim: (opportunityId: string) => void;
+  onMarkPickedUp: (opportunityId: string) => void;
+  onMarkDelivered: (opportunityId: string) => void;
 };
 
 export function AgentScreen({
   agentOpportunities,
   claimedOpportunityIds,
+  deliveredOpportunityIds,
   isAvailable,
   onBack,
+  onMarkDelivered,
+  onMarkPickedUp,
   onToggleAvailability,
-  onToggleOpportunityClaim
+  onToggleOpportunityClaim,
+  pickedUpOpportunityIds
 }: Props) {
   return (
     <View>
@@ -34,7 +42,7 @@ export function AgentScreen({
         <View style={styles.agentHeader}>
           <View>
             <Text style={sharedStyles.cardTitle}>Available for deliveries</Text>
-            <Text style={sharedStyles.bodyCopy}>Eligibility uses Agent → Merchant → Customer route.</Text>
+            <Text style={sharedStyles.bodyCopy}>Eligibility uses Agent -&gt; Merchant -&gt; Customer route.</Text>
           </View>
           <TouchableOpacity
             onPress={onToggleAvailability}
@@ -44,12 +52,22 @@ export function AgentScreen({
           </TouchableOpacity>
         </View>
       </View>
-      {agentOpportunities.map((opportunity) => (
-        <View key={opportunity.id} style={sharedStyles.card}>
+      {agentOpportunities.length > 0 ? (
+        agentOpportunities.map((opportunity) => (
+          <View key={opportunity.id} style={sharedStyles.card}>
+            {(() => {
+              const isClaimed = claimedOpportunityIds.includes(opportunity.id);
+              const isPickedUp = pickedUpOpportunityIds.includes(opportunity.id);
+              const isDelivered = deliveredOpportunityIds.includes(opportunity.id);
+              const stage = isDelivered ? "Delivered" : isPickedUp ? "Picked Up" : isClaimed ? "Claimed" : "Open";
+
+              return (
+                <>
           <View style={styles.cardHeader}>
             <Text style={sharedStyles.cardTitle}>{opportunity.route}</Text>
             <Text style={styles.eligibility}>{opportunity.eligibility}</Text>
           </View>
+          <Text style={styles.stageText}>Stage: {stage}</Text>
           <View style={sharedStyles.inlineMeta}>
             <Ionicons color={colors.deepGreen} name="navigate-outline" size={18} />
             <Text style={sharedStyles.metaText}>{opportunity.distanceKm} km</Text>
@@ -65,11 +83,38 @@ export function AgentScreen({
             ]}
           >
             <Text style={styles.claimButtonText}>
-              {claimedOpportunityIds.includes(opportunity.id) ? "Claimed" : "Claim delivery"}
+              {isClaimed ? "Release delivery" : "Claim delivery"}
             </Text>
           </TouchableOpacity>
+          <View style={styles.actionRow}>
+            <TouchableOpacity
+              disabled={!isClaimed || isPickedUp}
+              onPress={() => onMarkPickedUp(opportunity.id)}
+              style={[styles.stageButton, !isClaimed || isPickedUp ? styles.disabledClaimButton : null]}
+            >
+              <Text style={styles.stageButtonText}>Pickup proof</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              disabled={!isPickedUp || isDelivered}
+              onPress={() => onMarkDelivered(opportunity.id)}
+              style={[styles.stageButton, !isPickedUp || isDelivered ? styles.disabledClaimButton : null]}
+            >
+              <Text style={styles.stageButtonText}>Delivered</Text>
+            </TouchableOpacity>
+          </View>
+                </>
+              );
+            })()}
+          </View>
+        ))
+      ) : (
+        <View style={sharedStyles.card}>
+          <Text style={sharedStyles.cardTitle}>No delivery opportunities</Text>
+          <Text style={sharedStyles.bodyCopy}>
+            New assigned or open delivery requests will appear here when vendors hand over orders.
+          </Text>
         </View>
-      ))}
+      )}
     </View>
   );
 }
@@ -80,6 +125,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
     justifyContent: "space-between"
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 10
   },
   backButton: {
     alignItems: "center",
@@ -108,6 +158,25 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 13,
     fontWeight: "900"
+  },
+  stageButton: {
+    alignItems: "center",
+    borderColor: colors.deepGreen,
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    paddingVertical: 10
+  },
+  stageButtonText: {
+    color: colors.deepGreen,
+    fontSize: 12,
+    fontWeight: "900"
+  },
+  stageText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "900",
+    marginTop: 8
   },
   claimedButton: {
     backgroundColor: colors.orange

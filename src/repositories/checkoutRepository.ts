@@ -58,6 +58,8 @@ export async function createCheckoutOrder(
   );
   const totalNaira = subtotalNaira + deliveryFeeNaira;
   const merchantId = cartItems[0].vendorId!;
+  const paymentReference = `CHOW-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+  const paymentStatus = paymentMode === "Flutterwave" ? "authorized" : "pay_on_delivery";
 
   const orderResult = await supabase
     .from("orders")
@@ -67,6 +69,8 @@ export async function createCheckoutOrder(
       status: "placed",
       fulfilment_mode: "trek_delivery",
       payment_mode: paymentMode === "Flutterwave" ? "flutterwave" : "pay_on_delivery",
+      payment_reference: paymentReference,
+      payment_status: paymentStatus,
       subtotal_naira: subtotalNaira,
       delivery_fee_naira: deliveryFeeNaira,
       total_naira: totalNaira
@@ -104,7 +108,10 @@ export async function createCheckoutOrder(
 
   return {
     ok: true,
-    message: `Order #${orderId.slice(0, 8).toUpperCase()} placed.`,
+    message:
+      paymentMode === "Flutterwave"
+        ? `Order #${orderId.slice(0, 8).toUpperCase()} placed with payment reference ${paymentReference}.`
+        : `Order #${orderId.slice(0, 8).toUpperCase()} placed for pay on delivery.`,
     orderId
   };
 }

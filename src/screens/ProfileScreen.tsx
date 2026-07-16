@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import {
   getCurrentSessionIdentity,
@@ -13,6 +13,7 @@ import {
   activateAgentProfile,
   activateMerchantProfile
 } from "../repositories/roleOnboardingRepository";
+import { requestPushNotificationPermission } from "../repositories/notificationRepository";
 import { hasSupabaseConfig } from "../lib/supabase";
 import { colors } from "../theme/colors";
 import { sharedStyles } from "../theme/sharedStyles";
@@ -24,6 +25,13 @@ const profileRows = [
   { icon: "notifications-outline", label: "Notification categories" },
   { icon: "shield-checkmark-outline", label: "Approved roles" }
 ] as const;
+
+const legalLinks = [
+  { label: "Landing page", url: "https://chowtrek-landing.vercel.app" },
+  { label: "Privacy Policy", url: "https://chowtrek-landing.vercel.app/privacy/" },
+  { label: "Terms of Use", url: "https://chowtrek-landing.vercel.app/terms/" },
+  { label: "Download latest APK", url: "https://chowtrek-landing.vercel.app/api/download" }
+];
 
 type Props = {
   onOpenRole: (tab: TabKey) => void;
@@ -81,6 +89,13 @@ export function ProfileScreen({
     setIsSending(false);
   }
 
+  async function handlePushPermission() {
+    setIsSending(true);
+    const result = await requestPushNotificationPermission();
+    setMessage(result.message);
+    setIsSending(false);
+  }
+
   return (
     <View>
       <Text style={sharedStyles.screenTitle}>Profile</Text>
@@ -125,6 +140,13 @@ export function ProfileScreen({
       ))}
       <View style={sharedStyles.card}>
         <Text style={sharedStyles.cardTitle}>Notification categories</Text>
+        <TouchableOpacity
+          disabled={isSending}
+          onPress={handlePushPermission}
+          style={[styles.secondaryButton, isSending ? styles.disabledButton : null]}
+        >
+          <Text style={styles.secondaryButtonText}>Enable push notifications</Text>
+        </TouchableOpacity>
         {notificationPreferences.map((preference) => (
           <TouchableOpacity
             key={preference.id}
@@ -197,6 +219,22 @@ export function ProfileScreen({
         <TouchableOpacity onPress={() => onOpenRole("admin")} style={styles.secondaryButton}>
           <Text style={styles.secondaryButtonText}>Open admin workspace</Text>
         </TouchableOpacity>
+      </View>
+      <View style={sharedStyles.card}>
+        <Text style={sharedStyles.cardTitle}>Legal and release links</Text>
+        <Text style={sharedStyles.bodyCopy}>
+          Review ChowTrek policies, landing page, and the latest hosted Android APK.
+        </Text>
+        {legalLinks.map((link) => (
+          <TouchableOpacity
+            key={link.url}
+            onPress={() => Linking.openURL(link.url)}
+            style={styles.preferenceRow}
+          >
+            <Text style={styles.preferenceLabel}>{link.label}</Text>
+            <Ionicons color={colors.deepGreen} name="open-outline" size={18} />
+          </TouchableOpacity>
+        ))}
       </View>
     </View>
   );

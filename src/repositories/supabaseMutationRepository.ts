@@ -171,6 +171,44 @@ export async function syncDeliveryClaim(
   };
 }
 
+export async function syncDeliveryStage(
+  deliveryId: string,
+  status: "in_transit" | "delivered"
+): Promise<SyncResult> {
+  const agent = await getCurrentAgentProfileId();
+
+  if (!agent.ok) {
+    return agent;
+  }
+
+  const result = await supabase!
+    .from("deliveries")
+    .update({ status, last_seen_at: new Date().toISOString() })
+    .eq("id", deliveryId)
+    .eq("agent_id", agent.id)
+    .select("id")
+    .maybeSingle();
+
+  if (result.error) {
+    return formatFailure("Delivery stage sync failed", result.error.message);
+  }
+
+  if (!result.data) {
+    return {
+      ok: false,
+      message: "Delivery stage stayed local. This delivery is not assigned to this agent."
+    };
+  }
+
+  return {
+    ok: true,
+    message:
+      status === "in_transit"
+        ? "Pickup stage synced to Supabase."
+        : "Delivery completion synced to Supabase."
+  };
+}
+
 type UserLookupResult = { ok: true; id: string } | { ok: false; message: string };
 
 async function getCurrentUser(): Promise<UserLookupResult> {

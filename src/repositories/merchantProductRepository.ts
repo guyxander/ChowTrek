@@ -5,11 +5,24 @@ export type MerchantProductResult = {
   message: string;
 };
 
+export type MerchantUploadResult =
+  | {
+      ok: true;
+      message: string;
+      publicUrl: string;
+    }
+  | {
+      ok: false;
+      message: string;
+    };
+
 export async function createMerchantProduct(
   name: string,
-  priceNaira: number
+  priceNaira: number,
+  imageUrl?: string
 ): Promise<MerchantProductResult> {
   const trimmedName = name.trim();
+  const trimmedImageUrl = imageUrl?.trim();
 
   if (!trimmedName) {
     return { ok: false, message: "Enter a product name." };
@@ -56,6 +69,7 @@ export async function createMerchantProduct(
       merchant_id: merchantResult.data.id,
       name: trimmedName,
       description: "Merchant-created ChowTrek item",
+      image_url: trimmedImageUrl || null,
       price_naira: Math.round(priceNaira),
       status: "food_ready",
       is_active: true
@@ -83,4 +97,45 @@ export async function createMerchantProduct(
   }
 
   return { ok: true, message: `${trimmedName} added to your storefront.` };
+}
+
+export async function uploadMerchantProductImage(
+  uri: string,
+  fileName = `product-${Date.now()}.jpg`
+): Promise<MerchantUploadResult> {
+  if (!supabase) {
+    return { ok: false, message: "Supabase is not configured for media upload." };
+  }
+
+  const {
+    data: { user },
+    error: userError
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    return { ok: false, message: `Session lookup failed: ${userError.message}` };
+  }
+
+  if (!user) {
+    return { ok: false, message: "Sign in with Google before uploading product images." };
+  }
+
+  const response = await fetch(uri);
+  const blob = await response.blob();
+  const cleanName = fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
+  const storagePath = `${user.id}/${Date.now()}-${cleanName}`;
+  const uploadResult = await supabase.storage
+    .from("product-media")
+    .upload(storagePath, blob, {
+      contentType: blob.type || "image/jpeg",
+      upsert: true
+    });
+
+  if (uploadResult.error) {
+    return { ok: false, message: `Image upload failed: ${uploadResult.error.message}` };
+  }
+
+  const publicUrl = supabase.storage.from("product-media").getPublicUrl(storagePath).data.publicUrl;
+
+  return { ok: true, message: "Product image uploaded.", publicUrl };
 }

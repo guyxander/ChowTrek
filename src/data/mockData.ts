@@ -90,7 +90,11 @@ export const activeOrders: Order[] = [
     status: "In Transit",
     fulfilmentMode: "Trek Delivery",
     etaMinutes: 12,
-    totalNaira: 4200
+    totalNaira: 4200,
+    paymentMode: "Flutterwave",
+    paymentStatus: "Authorized",
+    paymentReference: "CHOW-DEMO-42A",
+    receiptLines: ["Jollof rice + beef x1", "Delivery fee", "Flutterwave authorized"]
   },
   {
     id: "38C",
@@ -99,7 +103,11 @@ export const activeOrders: Order[] = [
     status: "Ready",
     fulfilmentMode: "Pickup",
     etaMinutes: 6,
-    totalNaira: 1800
+    totalNaira: 1800,
+    paymentMode: "Pay on Delivery",
+    paymentStatus: "Pay on Delivery",
+    paymentReference: "POD-38C",
+    receiptLines: ["Coconut rolls pack x1", "Pickup order", "Payment due at handoff"]
   }
 ];
 
@@ -130,21 +138,24 @@ export const products: Product[] = [
     vendorId: "mama-put",
     name: "Jollof rice + beef",
     priceNaira: 3200,
-    status: "Food Ready"
+    status: "Food Ready",
+    imageUrl: "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26"
   },
   {
     id: "egusi-swallow",
     vendorId: "mama-put",
     name: "Egusi and swallow",
     priceNaira: 2800,
-    status: "Preparing"
+    status: "Preparing",
+    imageUrl: "https://images.unsplash.com/photo-1547592180-85f173990554"
   },
   {
     id: "plantain-side",
     vendorId: "mama-put",
     name: "Fried plantain side",
     priceNaira: 900,
-    status: "Food Ready"
+    status: "Food Ready",
+    imageUrl: "https://images.unsplash.com/photo-1619929775482-5dd5083a0fd2"
   }
 ];
 
@@ -160,14 +171,16 @@ export const agentOpportunities: AgentOpportunity[] = [
     route: "Mama Put's Kitchen -> Admiralty Way",
     payoutNaira: 1200,
     distanceKm: 2.4,
-    eligibility: "Best fit"
+    eligibility: "Best fit",
+    stage: "Open"
   },
   {
     id: "opp-39b",
     route: "Suya Corner -> Fola Osibo",
     payoutNaira: 900,
     distanceKm: 1.8,
-    eligibility: "Nearby"
+    eligibility: "Nearby",
+    stage: "Open"
   }
 ];
 

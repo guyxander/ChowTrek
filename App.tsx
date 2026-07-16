@@ -18,6 +18,7 @@ import { updateMerchantOrderStatus } from "./src/repositories/orderStatusReposit
 import {
   syncAgentAvailability,
   syncDeliveryClaim,
+  syncDeliveryStage,
   syncNotificationPreference,
   syncProductStatus,
   syncVendorFollow
@@ -58,6 +59,8 @@ export default function App() {
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("Flutterwave");
   const [isAgentAvailable, setIsAgentAvailable] = useState(true);
   const [claimedOpportunityIds, setClaimedOpportunityIds] = useState<string[]>([]);
+  const [pickedUpOpportunityIds, setPickedUpOpportunityIds] = useState<string[]>([]);
+  const [deliveredOpportunityIds, setDeliveredOpportunityIds] = useState<string[]>([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -179,8 +182,8 @@ export default function App() {
     }
   }
 
-  async function addMerchantProduct(name: string, priceNaira: number) {
-    const result = await createMerchantProduct(name, priceNaira);
+  async function addMerchantProduct(name: string, priceNaira: number, imageUrl?: string) {
+    const result = await createMerchantProduct(name, priceNaira, imageUrl);
 
     setDataNotice(result.message);
 
@@ -237,7 +240,38 @@ export default function App() {
         : [...currentIds, opportunityId]
     );
 
+    if (!shouldClaim) {
+      setPickedUpOpportunityIds((currentIds) => currentIds.filter((id) => id !== opportunityId));
+      setDeliveredOpportunityIds((currentIds) => currentIds.filter((id) => id !== opportunityId));
+    }
+
     const result = await syncDeliveryClaim(opportunityId, shouldClaim);
+    setDataNotice(result.message);
+  }
+
+  async function markOpportunityPickedUp(opportunityId: string) {
+    if (!claimedOpportunityIds.includes(opportunityId)) {
+      setDataNotice("Claim this delivery before marking pickup.");
+      return;
+    }
+
+    setPickedUpOpportunityIds((currentIds) =>
+      currentIds.includes(opportunityId) ? currentIds : [...currentIds, opportunityId]
+    );
+    const result = await syncDeliveryStage(opportunityId, "in_transit");
+    setDataNotice(result.message);
+  }
+
+  async function markOpportunityDelivered(opportunityId: string) {
+    if (!pickedUpOpportunityIds.includes(opportunityId)) {
+      setDataNotice("Mark pickup before completing delivery.");
+      return;
+    }
+
+    setDeliveredOpportunityIds((currentIds) =>
+      currentIds.includes(opportunityId) ? currentIds : [...currentIds, opportunityId]
+    );
+    const result = await syncDeliveryStage(opportunityId, "delivered");
     setDataNotice(result.message);
   }
 
@@ -297,8 +331,12 @@ export default function App() {
             <AgentScreen
               agentOpportunities={agentOpportunities}
               claimedOpportunityIds={claimedOpportunityIds}
+              deliveredOpportunityIds={deliveredOpportunityIds}
               isAvailable={isAgentAvailable}
+              pickedUpOpportunityIds={pickedUpOpportunityIds}
               onBack={() => setActiveTab("profile")}
+              onMarkDelivered={markOpportunityDelivered}
+              onMarkPickedUp={markOpportunityPickedUp}
               onToggleAvailability={toggleAgentAvailability}
               onToggleOpportunityClaim={toggleOpportunityClaim}
             />
