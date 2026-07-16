@@ -3,6 +3,9 @@ const SUPABASE_ANON_KEY =
   process.env.SUPABASE_ANON_KEY ||
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
   'sb_publishable_xKRPJg2qgKSH4nmQVe8Gcg_apafTp9e';
+const APK_DOWNLOAD_URL =
+  process.env.APK_DOWNLOAD_URL ||
+  'https://github.com/guyxander/ChowTrek/raw/main/public/downloads/chowtrek-latest.apk';
 
 module.exports = async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store');
@@ -22,7 +25,7 @@ module.exports = async function handler(request, response) {
   }
 
   response.writeHead(302, {
-    Location: '/downloads/chowtrek-latest.apk',
+    Location: APK_DOWNLOAD_URL,
   });
   response.end();
 };

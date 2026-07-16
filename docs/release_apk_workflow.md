@@ -15,4 +15,8 @@ git commit -m "Replace latest Android APK"
 git push origin main
 ```
 
-The landing page download button points to `/api/download`, which increments the live Supabase download counter and redirects to `/downloads/chowtrek-latest.apk`.
+The landing page download button points to `/api/download`, which increments the live Supabase download counter and redirects to the GitHub-hosted latest APK at:
+
+```text
+https://github.com/guyxander/ChowTrek/raw/main/public/downloads/chowtrek-latest.apk
+```
