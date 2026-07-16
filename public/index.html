@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="ChowTrek connects neighborhoods with nearby food vendors, fresh meals, local discovery, and fast Android ordering."
+    />
+    <title>ChowTrek - Hyperlocal Food Commerce</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="/">
+          <span class="brand-mark">CT</span>
+          <span>ChowTrek</span>
+        </a>
+        <nav class="nav-links" aria-label="Main navigation">
+          <a href="#features">Features</a>
+          <a href="#download">Download</a>
+          <a href="/privacy/">Privacy</a>
+          <a href="/terms/">Terms</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero">
+          <div>
+            <span class="eyebrow">Android MVP now available</span>
+            <h1>Find neighborhood food faster.</h1>
+            <p class="hero-copy">
+              ChowTrek brings nearby vendors, fresh meals, order tracking, and local food discovery into one Android app built for everyday city eating.
+            </p>
+            <div class="hero-actions">
+              <a class="button primary" href="/api/download">Download APK</a>
+              <a class="button secondary" href="#features">See what it does</a>
+            </div>
+            <div class="stats-row" aria-label="ChowTrek highlights">
+              <div class="stat">
+                <strong data-download-count>0</strong>
+                <span>APK downloads</span>
+              </div>
+              <div class="stat">
+                <strong>3</strong>
+                <span>seeded vendors</span>
+              </div>
+              <div class="stat">
+                <strong>5</strong>
+                <span>live products</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="phone-frame" aria-label="ChowTrek app preview">
+            <div class="phone-screen">
+              <div class="phone-top">
+                <span class="location-pill">Near you in Lagos</span>
+                <span class="avatar"></span>
+              </div>
+              <div class="search-card">
+                <strong>What are you craving?</strong>
+                <div class="search-input">Search jollof, shawarma, suya...</div>
+              </div>
+              <article class="vendor-card">
+                <div class="vendor-media">
+                  <span class="vendor-badge">Open now</span>
+                </div>
+                <h3>Mama T's Rice Bowl</h3>
+                <p>Jollof rice, grilled chicken, plantain, and neighborhood pickup in minutes.</p>
+              </article>
+              <article class="vendor-card">
+                <div class="vendor-media">
+                  <span class="vendor-badge">Fresh batch</span>
+                </div>
+                <h3>Island Suya Spot</h3>
+                <p>Spiced skewers, sides, and live vendor updates from the timeline.</p>
+              </article>
+              <div class="order-strip">
+                <div>
+                  <span>Order status</span>
+                  Ready for pickup
+                </div>
+                <strong>12 min</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="features">
+          <div class="section-header">
+            <h2>Built for buyers, vendors, and local operators.</h2>
+            <p>
+              The MVP connects discovery, authenticated checkout, merchant product management, role onboarding, and live Supabase-backed content in one Android experience.
+            </p>
+          </div>
+          <div class="feature-grid">
+            <article class="feature">
+              <h3>Hyperlocal discovery</h3>
+              <p>Browse nearby vendors, products, timeline updates, and community content backed by live data.</p>
+            </article>
+            <article class="feature">
+              <h3>Google sign-in</h3>
+              <p>Customers, merchants, and agents can use Google authentication instead of paid phone OTP.</p>
+            </article>
+            <article class="feature">
+              <h3>Merchant tools</h3>
+              <p>Signed-in merchants can create products and move orders through preparation and handoff states.</p>
+            </article>
+            <article class="feature">
+              <h3>Download tracking</h3>
+              <p>The APK button increments a live Supabase counter so the landing page shows real download interest.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="download-band" id="download">
+          <div class="section">
+            <div>
+              <span class="eyebrow">Latest Android build</span>
+              <h2>Install ChowTrek and test the MVP today.</h2>
+              <p>
+                The download button always points to the latest signed APK. When a new Android build is ready, the old file is replaced at the same URL.
+              </p>
+              <div class="hero-actions">
+                <a class="button primary" href="/api/download">Download APK</a>
+                <a class="button secondary" href="/privacy/">Privacy policy</a>
+              </div>
+            </div>
+            <aside class="download-counter" aria-label="Download count">
+              <strong data-download-count>0</strong>
+              <span>total APK downloads</span>
+            </aside>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div class="footer-inner">
+          <div>
+            <h3>ChowTrek</h3>
+            <p>
+              Hyperlocal food commerce for Android. Current MVP: version 0.1.0, package ng.chowtrek.app, focused on neighborhood food discovery and ordering.
+            </p>
+          </div>
+          <div>
+            <h4>Download</h4>
+            <a href="/api/download">Latest Android APK</a>
+            <p><span data-download-count>0</span> total downloads</p>
+          </div>
+          <div>
+            <h4>Legal</h4>
+            <a href="/privacy/">Privacy Policy</a>
+            <a href="/terms/">Terms of Use</a>
+          </div>
+          <div>
+            <h4>Product</h4>
+            <a href="#features">Features</a>
+            <a href="#download">APK release</a>
+            <p>Built with Expo, React Native, Supabase, and Vercel.</p>
+          </div>
+        </div>
+        <p class="fine-print">© 2026 ChowTrek. All rights reserved.</p>
+      </footer>
+    </div>
+    <script src="/assets/site.js"></script>
+  </body>
+</html>

@@ -9,9 +9,10 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "check:prd": "node scripts/check-prd-contract.mjs",
+    "check:landing": "node scripts/check-landing.mjs",
     "check:supabase": "node scripts/check-supabase-public-data.mjs",
     "check:seed": "node scripts/check-supabase-seed-data.mjs",
-    "verify": "pnpm run typecheck && pnpm run check:prd",
+    "verify": "pnpm run typecheck && pnpm run check:prd && pnpm run check:landing",
     "ios": "expo run:ios"
   },
   "dependencies": {
