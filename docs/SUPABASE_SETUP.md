@@ -62,6 +62,10 @@ Connected project discovered through the Supabase app:
    pnpm run check:seed
    ```
 
+7. Confirm `docs/supabase_role_onboarding_patch.sql` and `docs/supabase_checkout_patch.sql`
+   have been applied. They allow signed-in users to activate their own merchant/agent records
+   and create customer checkout orders without weakening public RLS.
+
 ## App Behavior
 
 The app now attempts to load live data from Supabase when both URL and anon key are present.

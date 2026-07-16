@@ -106,6 +106,8 @@ export const activeOrders: Order[] = [
 export const cartItems: CartItem[] = [
   {
     id: "cart-jollof",
+    productId: "66666666-6666-4666-8666-666666666661",
+    vendorId: "55555555-5555-4555-8555-555555555551",
     productName: "Jollof rice + beef",
     vendorName: "Mama Put's Kitchen",
     quantity: 1,
@@ -113,6 +115,8 @@ export const cartItems: CartItem[] = [
   },
   {
     id: "cart-plantain",
+    productId: "66666666-6666-4666-8666-666666666662",
+    vendorId: "55555555-5555-4555-8555-555555555551",
     productName: "Fried plantain side",
     vendorName: "Mama Put's Kitchen",
     quantity: 1,
@@ -147,20 +151,20 @@ export const products: Product[] = [
 export const merchantMetrics: MerchantMetric[] = [
   { label: "Open orders", value: "8", tone: "orange" },
   { label: "Followers", value: "1,240", tone: "green" },
-  { label: "Today sales", value: "₦86k", tone: "neutral" }
+  { label: "Today sales", value: "NGN 86k", tone: "neutral" }
 ];
 
 export const agentOpportunities: AgentOpportunity[] = [
   {
     id: "opp-42a",
-    route: "Mama Put's Kitchen → Admiralty Way",
+    route: "Mama Put's Kitchen -> Admiralty Way",
     payoutNaira: 1200,
     distanceKm: 2.4,
     eligibility: "Best fit"
   },
   {
     id: "opp-39b",
-    route: "Suya Corner → Fola Osibo",
+    route: "Suya Corner -> Fola Osibo",
     payoutNaira: 900,
     distanceKm: 1.8,
     eligibility: "Nearby"

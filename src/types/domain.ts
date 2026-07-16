@@ -60,6 +60,8 @@ export type Product = {
 
 export type CartItem = {
   id: string;
+  productId?: string;
+  vendorId?: string;
   productName: string;
   vendorName: string;
   quantity: number;

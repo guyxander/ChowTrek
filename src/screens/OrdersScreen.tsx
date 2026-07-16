@@ -12,12 +12,14 @@ type Props = {
   orders: Order[];
   paymentMode: PaymentMode;
   onCartQuantityChange: (itemId: string, delta: number) => void;
+  onCheckout: () => void;
   onPaymentModeChange: (mode: PaymentMode) => void;
 };
 
 export function OrdersScreen({
   cartItems,
   onCartQuantityChange,
+  onCheckout,
   onPaymentModeChange,
   orders,
   paymentMode
@@ -48,6 +50,13 @@ export function OrdersScreen({
         onQuantityChange={onCartQuantityChange}
         paymentMode={paymentMode}
       />
+      <TouchableOpacity
+        disabled={cartItems.length === 0}
+        onPress={onCheckout}
+        style={[styles.checkoutButton, cartItems.length === 0 ? styles.checkoutButtonDisabled : null]}
+      >
+        <Text style={styles.checkoutButtonText}>Place order</Text>
+      </TouchableOpacity>
       {orders.map((order) => (
         <OrderCard key={order.id} order={order} />
       ))}
@@ -111,6 +120,22 @@ const styles = StyleSheet.create({
     gap: 6,
     marginBottom: 12,
     padding: 4
+  },
+  checkoutButton: {
+    alignItems: "center",
+    backgroundColor: colors.deepGreen,
+    borderRadius: 8,
+    marginBottom: 12,
+    marginTop: -4,
+    paddingVertical: 14
+  },
+  checkoutButtonDisabled: {
+    opacity: 0.45
+  },
+  checkoutButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "900"
   },
   routeIcon: {
     alignItems: "center",

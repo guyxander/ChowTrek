@@ -11,6 +11,7 @@ import { HomeScreen } from "./src/screens/HomeScreen";
 import { MerchantScreen } from "./src/screens/MerchantScreen";
 import { OrdersScreen } from "./src/screens/OrdersScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
+import { createCheckoutOrder } from "./src/repositories/checkoutRepository";
 import { getMockCommerceSnapshot, loadCommerceSnapshot } from "./src/repositories/commerceSnapshot";
 import {
   syncAgentAvailability,
@@ -162,6 +163,19 @@ export default function App() {
     );
   }
 
+  async function checkoutCart() {
+    const result = await createCheckoutOrder(cartItems, paymentMode);
+
+    setDataNotice(result.message);
+
+    if (result.ok) {
+      setCartItems([]);
+      const snapshot = await loadCommerceSnapshot();
+      setOrders(snapshot.orders);
+      setAgentOpportunities(snapshot.agentOpportunities);
+    }
+  }
+
   async function cycleProductStatus(productId: string) {
     const nextStatus: Record<FoodStatus, FoodStatus> = {
       Preparing: "Food Ready",
@@ -223,6 +237,7 @@ export default function App() {
             <OrdersScreen
               cartItems={cartItems}
               onCartQuantityChange={changeCartQuantity}
+              onCheckout={checkoutCart}
               orders={orders}
               paymentMode={paymentMode}
               onPaymentModeChange={setPaymentMode}
