@@ -67,6 +67,7 @@ import {
   AgentOpportunity,
   CartItem,
   FoodStatus,
+  FulfilmentMode,
   AgentDashboardSection,
   AdminDashboardSection,
   NotificationPreference,
@@ -426,6 +427,7 @@ export default function App() {
           id: `cart-${product.id}`,
           productId: product.id,
           vendorId: vendor.id,
+          fulfilmentModes: vendor.deliveryModes,
           productName: product.name,
           vendorName: vendor.name,
           quantity: 1,
@@ -436,8 +438,11 @@ export default function App() {
     setDataNotice(`${product.name} added to your ${vendor.name} cart.`);
   }
 
-  async function checkoutCart(selectedItems = cartItems) {
-    const result = await createCheckoutOrder(selectedItems, paymentMode);
+  async function checkoutCart(
+    selectedItems = cartItems,
+    fulfilmentMode: FulfilmentMode = "Trek Delivery"
+  ) {
+    const result = await createCheckoutOrder(selectedItems, paymentMode, fulfilmentMode);
 
     setDataNotice(result.message);
 

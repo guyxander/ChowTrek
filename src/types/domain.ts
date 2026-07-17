@@ -76,6 +76,7 @@ export type CartItem = {
   id: string;
   productId?: string;
   vendorId?: string;
+  fulfilmentModes?: FulfilmentMode[];
   productName: string;
   vendorName: string;
   quantity: number;

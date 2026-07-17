@@ -1,11 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { BrandLogo } from "../components/BrandLogo";
 import { OrderCard } from "../components/OrderCard";
 import { colors } from "../theme/colors";
-import { CartItem, Order, PaymentMode, WalletSummary } from "../types/domain";
+import { CartItem, FulfilmentMode, Order, PaymentMode, WalletSummary } from "../types/domain";
 import { formatNaira } from "../utils/money";
 
 type OrderTab = "cart" | "ongoing" | "completed";
@@ -17,7 +17,7 @@ type Props = {
   paymentMode: PaymentMode;
   wallet: WalletSummary;
   onCartQuantityChange: (itemId: string, delta: number) => void;
-  onCheckout: (items?: CartItem[]) => void;
+  onCheckout: (items?: CartItem[], fulfilmentMode?: FulfilmentMode) => void;
   onOpenWallet: () => void;
   onPaymentModeChange: (mode: PaymentMode) => void;
   onWalletRefresh: () => void;
@@ -27,6 +27,7 @@ type VendorCart = {
   id: string;
   vendorName: string;
   items: CartItem[];
+  fulfilmentModes: FulfilmentMode[];
   subtotal: number;
 };
 
@@ -35,6 +36,13 @@ const tabs: { key: OrderTab; label: string }[] = [
   { key: "ongoing", label: "Ongoing" },
   { key: "completed", label: "Completed" }
 ];
+
+const fallbackFulfilmentModes: FulfilmentMode[] = ["Trek Delivery", "Pickup"];
+const fulfilmentFees: Record<FulfilmentMode, number> = {
+  "Trek Delivery": 700,
+  Pickup: 0,
+  Express: 1200
+};
 
 export function OrdersScreen({
   cartItems,
@@ -49,9 +57,27 @@ export function OrdersScreen({
   wallet
 }: Props) {
   const [activeTab, setActiveTab] = useState<OrderTab>("cart");
+  const [selectedFulfilmentModes, setSelectedFulfilmentModes] = useState<
+    Record<string, FulfilmentMode>
+  >({});
   const vendorCarts = useMemo(() => groupCartItems(cartItems), [cartItems]);
   const ongoingOrders = orders.filter((order) => !["Delivered", "Cancelled"].includes(order.status));
   const completedOrders = orders.filter((order) => ["Delivered", "Cancelled"].includes(order.status));
+
+  useEffect(() => {
+    setSelectedFulfilmentModes((currentModes) => {
+      const nextModes: Record<string, FulfilmentMode> = {};
+
+      vendorCarts.forEach((cart) => {
+        const currentMode = currentModes[cart.id];
+        nextModes[cart.id] = cart.fulfilmentModes.includes(currentMode)
+          ? currentMode
+          : getDefaultFulfilmentMode(cart.fulfilmentModes);
+      });
+
+      return nextModes;
+    });
+  }, [vendorCarts]);
 
   return (
     <View style={styles.screen}>
@@ -117,8 +143,12 @@ export function OrdersScreen({
             onCheckout={onCheckout}
             onOpenWallet={onOpenWallet}
             onPaymentModeChange={onPaymentModeChange}
+            onSelectFulfilmentMode={(cartId, mode) =>
+              setSelectedFulfilmentModes((currentModes) => ({ ...currentModes, [cartId]: mode }))
+            }
             onWalletRefresh={onWalletRefresh}
             paymentMode={paymentMode}
+            selectedFulfilmentModes={selectedFulfilmentModes}
             wallet={wallet}
             vendorCarts={vendorCarts}
           />
@@ -135,18 +165,22 @@ function CartTab({
   onCheckout,
   onOpenWallet,
   onPaymentModeChange,
+  onSelectFulfilmentMode,
   onWalletRefresh,
   paymentMode,
+  selectedFulfilmentModes,
   wallet,
   vendorCarts
 }: {
   vendorCarts: VendorCart[];
   paymentMode: PaymentMode;
+  selectedFulfilmentModes: Record<string, FulfilmentMode>;
   wallet: WalletSummary;
   onCartQuantityChange: (itemId: string, delta: number) => void;
-  onCheckout: (items?: CartItem[]) => void;
+  onCheckout: (items?: CartItem[], fulfilmentMode?: FulfilmentMode) => void;
   onOpenWallet: () => void;
   onPaymentModeChange: (mode: PaymentMode) => void;
+  onSelectFulfilmentMode: (cartId: string, mode: FulfilmentMode) => void;
   onWalletRefresh: () => void;
 }) {
   return (
@@ -190,52 +224,103 @@ function CartTab({
       </View>
 
       {vendorCarts.length > 0 ? (
-        vendorCarts.map((cart) => (
-          <View key={cart.id} style={styles.cartCard}>
-            <View style={styles.cardHeader}>
-              <View>
-                <Text style={styles.cardTitle}>{cart.vendorName}</Text>
-                <Text style={styles.cardSubtle}>{cart.items.length} item cart</Text>
-              </View>
-              <Text style={styles.cartTotal}>{formatNaira(cart.subtotal)}</Text>
-            </View>
-            {cart.items.map((item) => (
-              <View key={item.id} style={styles.cartLine}>
-                <View style={styles.cartInfo}>
-                  <Text style={styles.itemName}>{item.productName}</Text>
-                  <Text style={styles.cardSubtle}>{formatNaira(item.unitPriceNaira)} each</Text>
-                  <View style={styles.quantityRow}>
-                    <TouchableOpacity
-                      onPress={() => onCartQuantityChange(item.id, -1)}
-                      style={styles.quantityButton}
-                    >
-                      <Text style={styles.quantityButtonText}>-</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.quantityText}>{item.quantity}</Text>
-                    <TouchableOpacity
-                      onPress={() => onCartQuantityChange(item.id, 1)}
-                      style={styles.quantityButton}
-                    >
-                      <Text style={styles.quantityButtonText}>+</Text>
-                    </TouchableOpacity>
-                  </View>
+        vendorCarts.map((cart) => {
+          const selectedMode =
+            selectedFulfilmentModes[cart.id] ?? getDefaultFulfilmentMode(cart.fulfilmentModes);
+          const fee = fulfilmentFees[selectedMode];
+          const total = cart.subtotal + fee;
+
+          return (
+            <View key={cart.id} style={styles.cartCard}>
+              <View style={styles.cardHeader}>
+                <View>
+                  <Text style={styles.cardTitle}>{cart.vendorName}</Text>
+                  <Text style={styles.cardSubtle}>{cart.items.length} item cart</Text>
                 </View>
-                <Text style={styles.lineAmount}>
-                  {formatNaira(item.quantity * item.unitPriceNaira)}
-                </Text>
+                <Text style={styles.cartTotal}>{formatNaira(total)}</Text>
               </View>
-            ))}
-            <View style={styles.deliveryLine}>
-              <View style={styles.deliveryMeta}>
-                <Ionicons color={colors.deepGreen} name="bicycle-outline" size={18} />
-                <Text style={styles.cardSubtle}>Delivery fee calculated at checkout</Text>
+              {cart.items.map((item) => (
+                <View key={item.id} style={styles.cartLine}>
+                  <View style={styles.cartInfo}>
+                    <Text style={styles.itemName}>{item.productName}</Text>
+                    <Text style={styles.cardSubtle}>{formatNaira(item.unitPriceNaira)} each</Text>
+                    <View style={styles.quantityRow}>
+                      <TouchableOpacity
+                        onPress={() => onCartQuantityChange(item.id, -1)}
+                        style={styles.quantityButton}
+                      >
+                        <Text style={styles.quantityButtonText}>-</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.quantityText}>{item.quantity}</Text>
+                      <TouchableOpacity
+                        onPress={() => onCartQuantityChange(item.id, 1)}
+                        style={styles.quantityButton}
+                      >
+                        <Text style={styles.quantityButtonText}>+</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  <Text style={styles.lineAmount}>
+                    {formatNaira(item.quantity * item.unitPriceNaira)}
+                  </Text>
+                </View>
+              ))}
+              <View style={styles.fulfilmentBlock}>
+                <Text style={styles.fulfilmentLabel}>Fulfilment</Text>
+                <View style={styles.fulfilmentOptions}>
+                  {cart.fulfilmentModes.map((mode) => {
+                    const isActive = selectedMode === mode;
+
+                    return (
+                      <TouchableOpacity
+                        key={mode}
+                        onPress={() => onSelectFulfilmentMode(cart.id, mode)}
+                        style={[
+                          styles.fulfilmentOption,
+                          isActive ? styles.fulfilmentOptionActive : null
+                        ]}
+                      >
+                        <Ionicons
+                          color={isActive ? "#ffffff" : colors.deepGreen}
+                          name={mode === "Pickup" ? "bag-handle-outline" : "bicycle-outline"}
+                          size={16}
+                        />
+                        <Text
+                          style={[
+                            styles.fulfilmentOptionText,
+                            isActive ? styles.fulfilmentOptionTextActive : null
+                          ]}
+                        >
+                          {mode}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
+              <View style={styles.deliveryLine}>
+                <View style={styles.deliveryMeta}>
+                  <Ionicons
+                    color={colors.deepGreen}
+                    name={selectedMode === "Pickup" ? "storefront-outline" : "bicycle-outline"}
+                    size={18}
+                  />
+                  <Text style={styles.cardSubtle}>
+                    {selectedMode === "Pickup"
+                      ? "Pickup has no delivery fee"
+                      : `${selectedMode} fee: ${formatNaira(fee)}`}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => onCheckout(cart.items, selectedMode)}
+                style={styles.checkoutButton}
+              >
+                <Text style={styles.checkoutButtonText}>Place this cart</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={() => onCheckout(cart.items)} style={styles.checkoutButton}>
-              <Text style={styles.checkoutButtonText}>Place this cart</Text>
-            </TouchableOpacity>
-          </View>
-        ))
+          );
+        })
       ) : (
         <EmptyState
           icon="cart-outline"
@@ -333,6 +418,7 @@ function groupCartItems(items: CartItem[]): VendorCart[] {
     const current = grouped.get(id) ?? {
       id,
       vendorName: item.vendorName,
+      fulfilmentModes: item.fulfilmentModes ?? fallbackFulfilmentModes,
       items: [],
       subtotal: 0
     };
@@ -343,6 +429,10 @@ function groupCartItems(items: CartItem[]): VendorCart[] {
   });
 
   return Array.from(grouped.values());
+}
+
+function getDefaultFulfilmentMode(modes: FulfilmentMode[]) {
+  return modes.includes("Trek Delivery") ? "Trek Delivery" : modes[0] ?? "Pickup";
 }
 
 function getOngoingLabel(order: Order) {
@@ -490,6 +580,43 @@ const styles = StyleSheet.create({
   fixedHeader: {
     backgroundColor: colors.surface,
     paddingBottom: 12
+  },
+  fulfilmentBlock: {
+    borderTopColor: colors.line,
+    borderTopWidth: 1,
+    gap: 8,
+    paddingTop: 12
+  },
+  fulfilmentLabel: {
+    color: colors.muted,
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "uppercase"
+  },
+  fulfilmentOption: {
+    alignItems: "center",
+    backgroundColor: colors.successSoft,
+    borderRadius: 999,
+    flexDirection: "row",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 8
+  },
+  fulfilmentOptionActive: {
+    backgroundColor: colors.deepGreen
+  },
+  fulfilmentOptionText: {
+    color: colors.deepGreen,
+    fontSize: 12,
+    fontWeight: "900"
+  },
+  fulfilmentOptionTextActive: {
+    color: "#ffffff"
+  },
+  fulfilmentOptions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8
   },
   iconButton: {
     alignItems: "center",

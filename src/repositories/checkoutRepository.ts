@@ -1,6 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { flutterwavePaymentUrl, isFlutterwaveConfigured } from "../lib/productionConfig";
-import { CartItem, PaymentMode } from "../types/domain";
+import { CartItem, FulfilmentMode, PaymentMode } from "../types/domain";
 import {
   requireBuyerCanCheckout,
   requireMerchantCanReceiveOrderForMerchantId
@@ -13,11 +13,19 @@ export type CheckoutResult = {
   paymentUrl?: string;
 };
 
-const deliveryFeeNaira = 700;
+const fulfilmentConfig: Record<
+  FulfilmentMode,
+  { feeNaira: number; normalizedMode: "pickup" | "trek_delivery" | "express"; needsDeliveryRequest: boolean }
+> = {
+  "Trek Delivery": { feeNaira: 700, normalizedMode: "trek_delivery", needsDeliveryRequest: true },
+  Pickup: { feeNaira: 0, normalizedMode: "pickup", needsDeliveryRequest: false },
+  Express: { feeNaira: 1200, normalizedMode: "express", needsDeliveryRequest: true }
+};
 
 export async function createCheckoutOrder(
   cartItems: CartItem[],
-  paymentMode: PaymentMode
+  paymentMode: PaymentMode,
+  fulfilmentMode: FulfilmentMode
 ): Promise<CheckoutResult> {
   if (!supabase) {
     return { ok: false, message: "Supabase is not configured for checkout." };
@@ -68,7 +76,8 @@ export async function createCheckoutOrder(
     (sum, item) => sum + item.quantity * item.unitPriceNaira,
     0
   );
-  const totalNaira = subtotalNaira + deliveryFeeNaira;
+  const fulfilment = fulfilmentConfig[fulfilmentMode];
+  const totalNaira = subtotalNaira + fulfilment.feeNaira;
   const merchantId = cartItems[0].vendorId!;
 
   const merchantCompletion = await requireMerchantCanReceiveOrderForMerchantId(merchantId);
@@ -118,12 +127,12 @@ export async function createCheckoutOrder(
       customer_id: user.id,
       merchant_id: merchantId,
       status: "placed",
-      fulfilment_mode: "trek_delivery",
+      fulfilment_mode: fulfilment.normalizedMode,
       payment_mode: normalizedPaymentMode,
       payment_reference: paymentReference,
       payment_status: paymentStatus,
       subtotal_naira: subtotalNaira,
-      delivery_fee_naira: deliveryFeeNaira,
+      delivery_fee_naira: fulfilment.feeNaira,
       total_naira: totalNaira
     })
     .select("id")
@@ -147,14 +156,16 @@ export async function createCheckoutOrder(
     return { ok: false, message: `Order item creation failed: ${itemResult.error.message}` };
   }
 
-  const deliveryResult = await supabase.from("deliveries").insert({
-    order_id: orderId,
-    agent_id: null,
-    status: "placed"
-  });
+  if (fulfilment.needsDeliveryRequest) {
+    const deliveryResult = await supabase.from("deliveries").insert({
+      order_id: orderId,
+      agent_id: null,
+      status: "placed"
+    });
 
-  if (deliveryResult.error) {
-    return { ok: false, message: `Delivery request failed: ${deliveryResult.error.message}` };
+    if (deliveryResult.error) {
+      return { ok: false, message: `Delivery request failed: ${deliveryResult.error.message}` };
+    }
   }
 
   const transactionResult = await supabase.from("transactions").insert({
@@ -195,8 +206,8 @@ export async function createCheckoutOrder(
           ? `Order #${orderId.slice(0, 8).toUpperCase()} placed. Complete Flutterwave payment with reference ${paymentReference}.`
           : `Order #${orderId.slice(0, 8).toUpperCase()} placed as pending. Configure Flutterwave payment URL to collect online payment.`
         : paymentMode === "Wallet"
-          ? `Order #${orderId.slice(0, 8).toUpperCase()} paid from ChowTrek Wallet.`
-          : `Order #${orderId.slice(0, 8).toUpperCase()} placed for pay on delivery.`,
+          ? `Order #${orderId.slice(0, 8).toUpperCase()} paid from ChowTrek Wallet for ${fulfilmentMode}.`
+          : `Order #${orderId.slice(0, 8).toUpperCase()} placed for ${fulfilmentMode.toLowerCase()} with pay on delivery.`,
     orderId,
     paymentUrl
   };
