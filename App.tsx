@@ -22,6 +22,7 @@ import { DiscoverScreen } from "./src/screens/DiscoverScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
 import { MerchantScreen } from "./src/screens/MerchantScreen";
 import { OrdersScreen } from "./src/screens/OrdersScreen";
+import { ProfileEditScreen } from "./src/screens/ProfileEditScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import {
   FavoritesScreen,
@@ -92,6 +93,7 @@ const initialWallets: Record<WalletRole, WalletSummary> = {
 type ProfilePanel =
   | "profile"
   | "wallet"
+  | "edit"
   | "addresses"
   | "favorites"
   | "notifications"
@@ -676,6 +678,7 @@ export default function App() {
               <ProfileScreen
                 notificationPreferences={notificationPreferences}
                 onOpenAddresses={() => navigateTo("profile", "addresses")}
+                onOpenEdit={() => navigateTo("profile", "edit")}
                 onOpenFavorites={() => navigateTo("profile", "favorites")}
                 onOpenInvite={() => navigateTo("profile", "invite")}
                 onOpenNotifications={openPushNotificationSettings}
@@ -685,6 +688,9 @@ export default function App() {
                 onOpenWallet={openCustomerWallet}
                 wallet={wallets.customer}
               />
+            ) : null}
+            {activeTab === "profile" && profilePanel === "edit" ? (
+              <ProfileEditScreen onBack={goBack} />
             ) : null}
             {activeTab === "profile" && profilePanel === "wallet" ? (
               <WalletScreen

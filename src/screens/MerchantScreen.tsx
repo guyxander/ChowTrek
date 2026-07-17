@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import type * as ExpoImagePicker from "expo-image-picker";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { SectionHeader } from "../components/SectionHeader";
@@ -8,6 +8,10 @@ import { StatusBadge } from "../components/StatusBadge";
 import { WalletPanel } from "../components/WalletPanel";
 import { commerceRepository } from "../repositories/commerceRepository";
 import { uploadMerchantProductImage } from "../repositories/merchantProductRepository";
+import {
+  loadProfileCompletion,
+  saveRoleVerificationAddress
+} from "../repositories/profileCompletionRepository";
 import { colors } from "../theme/colors";
 import { sharedStyles } from "../theme/sharedStyles";
 import {
@@ -53,9 +57,24 @@ export function MerchantScreen({
   const [productImageUrl, setProductImageUrl] = useState("");
   const [storeName, setStoreName] = useState("Mama Put Kitchen");
   const [storeArea, setStoreArea] = useState("Yaba");
+  const [verificationAddress, setVerificationAddress] = useState("");
   const [uploadMessage, setUploadMessage] = useState("");
+  const [verificationMessage, setVerificationMessage] = useState(
+    "Save your private shop address before receiving orders."
+  );
+  const [isSavingVerification, setIsSavingVerification] = useState(false);
   const metrics = commerceRepository.getMerchantMetrics();
   const priceNaira = Number(productPrice);
+
+  useEffect(() => {
+    loadProfileCompletion().then((result) => {
+      if (!result.ok) {
+        setVerificationMessage(result.message);
+        return;
+      }
+      setVerificationAddress(result.data.merchantVerificationAddress);
+    });
+  }, []);
 
   async function pickAndUploadImage() {
     const ImagePicker = require("expo-image-picker");
@@ -85,6 +104,19 @@ export function MerchantScreen({
     if (uploadResult.ok) {
       setProductImageUrl(uploadResult.publicUrl);
     }
+  }
+
+  async function handleSaveVerificationAddress() {
+    setIsSavingVerification(true);
+    const result = await saveRoleVerificationAddress("merchant", verificationAddress);
+    setVerificationMessage(result.message);
+    if (result.ok) {
+      const latest = await loadProfileCompletion();
+      if (latest.ok) {
+        setVerificationAddress(latest.data.merchantVerificationAddress);
+      }
+    }
+    setIsSavingVerification(false);
   }
 
   return (
@@ -165,6 +197,33 @@ export function MerchantScreen({
             >
               <Text style={styles.statusButtonText}>Save storefront profile</Text>
             </TouchableOpacity>
+          </View>
+          <View style={sharedStyles.card}>
+            <View style={styles.requirementHeader}>
+              <Ionicons color={colors.deepGreen} name="shield-checkmark-outline" size={20} />
+              <Text style={sharedStyles.cardTitle}>Merchant verification</Text>
+            </View>
+            <Text style={sharedStyles.bodyCopy}>
+              Save your private shop address here. Buyers cannot see this address; it is only for ChowTrek review.
+            </Text>
+            <TextInput
+              multiline
+              onChangeText={setVerificationAddress}
+              placeholder="Shop number, street, city"
+              placeholderTextColor={colors.muted}
+              style={[styles.input, styles.multilineInput]}
+              value={verificationAddress}
+            />
+            <TouchableOpacity
+              disabled={isSavingVerification}
+              onPress={handleSaveVerificationAddress}
+              style={[styles.statusButton, isSavingVerification ? styles.disabledButton : null]}
+            >
+              <Text style={styles.statusButtonText}>
+                {isSavingVerification ? "Saving..." : "Save shop verification"}
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.imageMeta}>{verificationMessage}</Text>
           </View>
           <View style={sharedStyles.card}>
             <Text style={sharedStyles.cardTitle}>Add product</Text>
@@ -304,6 +363,9 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     marginTop: 4
   },
+  disabledButton: {
+    opacity: 0.62
+  },
   identity: {
     alignItems: "center",
     flexDirection: "row",
@@ -322,6 +384,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     flex: 1,
     padding: 14
+  },
+  multilineInput: {
+    minHeight: 82,
+    paddingTop: 12,
+    textAlignVertical: "top"
   },
   input: {
     backgroundColor: "#eef2ff",
@@ -379,6 +446,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "900",
     textTransform: "uppercase"
+  },
+  requirementHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 8
   },
   metricGrid: {
     flexDirection: "row",

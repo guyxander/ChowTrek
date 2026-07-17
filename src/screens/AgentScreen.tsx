@@ -1,7 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { WalletPanel } from "../components/WalletPanel";
+import {
+  loadProfileCompletion,
+  saveRoleVerificationAddress
+} from "../repositories/profileCompletionRepository";
 import { colors } from "../theme/colors";
 import { AgentDashboardSection, AgentOpportunity, WalletSummary } from "../types/domain";
 import { formatNaira } from "../utils/money";
@@ -49,6 +54,34 @@ export function AgentScreen({
   const claimedCount = claimedOpportunityIds.length;
   const completedCount = deliveredOpportunityIds.length;
   const visibleOpportunities = agentOpportunities.slice(0, 3);
+  const [verificationAddress, setVerificationAddress] = useState("");
+  const [verificationMessage, setVerificationMessage] = useState(
+    "Save your private home address before receiving delivery orders."
+  );
+  const [isSavingVerification, setIsSavingVerification] = useState(false);
+
+  useEffect(() => {
+    loadProfileCompletion().then((result) => {
+      if (!result.ok) {
+        setVerificationMessage(result.message);
+        return;
+      }
+      setVerificationAddress(result.data.agentVerificationAddress);
+    });
+  }, []);
+
+  async function handleSaveVerificationAddress() {
+    setIsSavingVerification(true);
+    const result = await saveRoleVerificationAddress("delivery_agent", verificationAddress);
+    setVerificationMessage(result.message);
+    if (result.ok) {
+      const latest = await loadProfileCompletion();
+      if (latest.ok) {
+        setVerificationAddress(latest.data.agentVerificationAddress);
+      }
+    }
+    setIsSavingVerification(false);
+  }
 
   return (
     <View style={styles.screen}>
@@ -82,6 +115,33 @@ export function AgentScreen({
               <Ionicons color={colors.deepGreen} name="trending-up" size={18} />
               <Text style={styles.trendText}>12% more than yesterday</Text>
             </View>
+          </View>
+          <View style={styles.verificationCard}>
+            <View style={styles.verificationHeader}>
+              <Ionicons color={colors.deepGreen} name="shield-checkmark-outline" size={20} />
+              <Text style={styles.verificationTitle}>Delivery verification</Text>
+            </View>
+            <Text style={styles.verificationCopy}>
+              Save your private home address here. It is visible only to ChowTrek admins for delivery agent review.
+            </Text>
+            <TextInput
+              multiline
+              onChangeText={setVerificationAddress}
+              placeholder="House number, street, city"
+              placeholderTextColor={colors.muted}
+              style={styles.verificationInput}
+              value={verificationAddress}
+            />
+            <TouchableOpacity
+              disabled={isSavingVerification}
+              onPress={handleSaveVerificationAddress}
+              style={[styles.verificationButton, isSavingVerification ? styles.disabledAction : null]}
+            >
+              <Text style={styles.verificationButtonText}>
+                {isSavingVerification ? "Saving..." : "Save delivery verification"}
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.verificationMessage}>{verificationMessage}</Text>
           </View>
           <View style={styles.sectionHeader}>
             <View>
@@ -638,6 +698,64 @@ const styles = StyleSheet.create({
   trendText: {
     color: colors.deepGreen,
     fontSize: 12,
+    fontWeight: "900"
+  },
+  verificationButton: {
+    alignItems: "center",
+    borderColor: colors.deepGreen,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 12,
+    paddingVertical: 12
+  },
+  verificationButtonText: {
+    color: colors.deepGreen,
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  verificationCard: {
+    backgroundColor: colors.card,
+    borderColor: "rgba(191, 201, 195, 0.28)",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginTop: 16,
+    padding: 16
+  },
+  verificationCopy: {
+    color: colors.muted,
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 19,
+    marginTop: 6
+  },
+  verificationHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8
+  },
+  verificationInput: {
+    backgroundColor: colors.surfaceContainerLow,
+    borderColor: "rgba(191, 201, 195, 0.52)",
+    borderRadius: 8,
+    borderWidth: 1,
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "700",
+    marginTop: 12,
+    minHeight: 82,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    textAlignVertical: "top"
+  },
+  verificationMessage: {
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 8
+  },
+  verificationTitle: {
+    color: colors.text,
+    fontSize: 16,
     fontWeight: "900"
   }
 });
