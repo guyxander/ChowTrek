@@ -37,7 +37,8 @@ import {
   createSavedAddress,
   deleteSavedAddress,
   fallbackAddresses,
-  loadSavedAddresses
+  loadSavedAddresses,
+  updateSavedAddress
 } from "./src/repositories/addressRepository";
 import {
   createMerchantProduct,
@@ -45,7 +46,12 @@ import {
 } from "./src/repositories/merchantProductRepository";
 import { updateMerchantOrderStatus } from "./src/repositories/orderStatusRepository";
 import { requestPushNotificationPermission } from "./src/repositories/notificationRepository";
-import { loadWalletSummary, requestWalletWithdrawal } from "./src/repositories/walletRepository";
+import {
+  loadWalletSummary,
+  requestWalletTopUp,
+  requestWalletWithdrawal
+} from "./src/repositories/walletRepository";
+import { flutterwavePaymentUrl, isFlutterwaveConfigured } from "./src/lib/productionConfig";
 import {
   syncAgentAvailability,
   syncDeliveryClaim,
@@ -219,9 +225,8 @@ export default function App() {
     }
   }
 
-  async function addSavedAddress() {
-    const nextAddressNumber = savedAddresses.length + 1;
-    const result = await createSavedAddress(`Address ${nextAddressNumber}`, "New delivery address");
+  async function addSavedAddress(label: string, detail: string) {
+    const result = await createSavedAddress(label, detail);
     setDataNotice(result.message);
 
     if (!result.ok || !result.address) {
@@ -235,6 +240,21 @@ export default function App() {
 
       return [...currentAddresses, result.address as SavedAddress];
     });
+
+    return result.address;
+  }
+
+  async function editSavedAddress(addressId: string, label: string, detail: string) {
+    const result = await updateSavedAddress(addressId, label, detail);
+    setDataNotice(result.message);
+
+    if (!result.ok || !result.address) {
+      return null;
+    }
+
+    setSavedAddresses((currentAddresses) =>
+      currentAddresses.map((address) => (address.id === addressId ? result.address as SavedAddress : address))
+    );
 
     return result.address;
   }
@@ -261,8 +281,26 @@ export default function App() {
     }
   }
 
-  function openWalletTopUpNotice() {
-    setDataNotice("Wallet top-up needs a funding provider before live deposits can be collected.");
+  async function openWalletTopUp(amountNaira: number) {
+    if (!Number.isFinite(amountNaira) || amountNaira < 100) {
+      setDataNotice("Enter a wallet top-up amount of at least NGN 100.");
+      return;
+    }
+
+    if (!isFlutterwaveConfigured) {
+      setDataNotice("Add EXPO_PUBLIC_FLUTTERWAVE_PAYMENT_URL to .env.local to collect Flutterwave payments.");
+      return;
+    }
+
+    const reference = `CHOW-WALLET-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    const result = await requestWalletTopUp("customer", amountNaira, reference);
+    setDataNotice(result.message);
+
+    if (!result.ok) {
+      return;
+    }
+
+    await Linking.openURL(buildFlutterwaveUrl(reference, amountNaira, "wallet_top_up"));
   }
 
   function openCustomerWallet() {
@@ -531,8 +569,10 @@ export default function App() {
               cartItems={cartItems}
               dataNotice={dataNotice}
               onAddToCart={addProductToCart}
-              onCreateAddress={addSavedAddress}
               onCartQuantityChange={changeCartQuantity}
+              onCreateAddress={() => {
+                navigateTo("profile", "addresses");
+              }}
               onOpenAddresses={() => navigateTo("profile", "addresses")}
               onOpenCart={() => changeActiveTab("orders")}
               onShowNotice={setDataNotice}
@@ -595,7 +635,9 @@ export default function App() {
             ) : null}
             {activeTab === "profile" && profilePanel === "wallet" ? (
               <WalletScreen
-                onAddMoney={openWalletTopUpNotice}
+                onAddMoney={(amountNaira) => {
+                  void openWalletTopUp(amountNaira);
+                }}
                 onBack={goBack}
                 onRefresh={refreshWallets}
                 wallet={wallets.customer}
@@ -610,6 +652,7 @@ export default function App() {
                   void removeSavedAddress(addressId);
                 }}
                 onRefresh={refreshSavedAddresses}
+                onUpdateAddress={editSavedAddress}
               />
             ) : null}
             {activeTab === "profile" && profilePanel === "favorites" ? (
@@ -761,4 +804,14 @@ function createInitialWallet(role: WalletRole): WalletSummary {
     message: "Loading wallet...",
     ledger: []
   };
+}
+
+function buildFlutterwaveUrl(reference: string, amountNaira: number, purpose: string): string {
+  const url = new URL(flutterwavePaymentUrl);
+  url.searchParams.set("tx_ref", reference);
+  url.searchParams.set("amount", String(amountNaira));
+  url.searchParams.set("currency", "NGN");
+  url.searchParams.set("meta_purpose", purpose);
+
+  return url.toString();
 }

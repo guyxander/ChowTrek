@@ -239,6 +239,18 @@ create table public.wallet_ledger_entries (
   created_at timestamptz not null default now()
 );
 
+create table public.wallet_top_up_requests (
+  id uuid primary key default gen_random_uuid(),
+  wallet_id uuid not null references public.wallets(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  amount_naira integer not null check (amount_naira > 0),
+  provider text not null default 'flutterwave' check (provider in ('flutterwave')),
+  provider_reference text not null unique,
+  status text not null default 'pending' check (status in ('pending', 'paid', 'failed', 'cancelled')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table public.wallet_withdrawal_requests (
   id uuid primary key default gen_random_uuid(),
   wallet_id uuid not null references public.wallets(id) on delete cascade,
@@ -366,6 +378,7 @@ alter table public.notification_preferences enable row level security;
 alter table public.transactions enable row level security;
 alter table public.wallets enable row level security;
 alter table public.wallet_ledger_entries enable row level security;
+alter table public.wallet_top_up_requests enable row level security;
 alter table public.wallet_withdrawal_requests enable row level security;
 alter table public.app_settings enable row level security;
 
@@ -678,6 +691,32 @@ using (
     select 1
     from public.wallets wallet
     where wallet.id = wallet_ledger_entries.wallet_id
+      and public.can_manage_wallet_role(wallet.role)
+  )
+);
+
+create policy "users read own wallet top ups"
+on public.wallet_top_up_requests for select
+to authenticated
+using (
+  user_id = (select auth.uid())
+  and exists (
+    select 1
+    from public.wallets wallet
+    where wallet.id = wallet_top_up_requests.wallet_id
+      and public.can_manage_wallet_role(wallet.role)
+  )
+);
+
+create policy "users request own wallet top ups"
+on public.wallet_top_up_requests for insert
+to authenticated
+with check (
+  user_id = (select auth.uid())
+  and exists (
+    select 1
+    from public.wallets wallet
+    where wallet.id = wallet_top_up_requests.wallet_id
       and public.can_manage_wallet_role(wallet.role)
   )
 );

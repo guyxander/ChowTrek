@@ -26,7 +26,7 @@ type Props = {
   products: Product[];
   vendors: Vendor[];
   onAddToCart: (product: Product, vendor: Vendor) => void;
-  onCreateAddress: () => Promise<SavedAddress | null>;
+  onCreateAddress: () => void;
   onCartQuantityChange: (itemId: string, delta: number) => void;
   onOpenAddresses: () => void;
   onOpenCart: () => void;
@@ -188,14 +188,7 @@ export function HomeScreen({
                 );
               })}
               <TouchableOpacity
-                onPress={async () => {
-                  const newAddress = await onCreateAddress();
-
-                  if (newAddress) {
-                    setSelectedAddressId(newAddress.id);
-                    setSelectedVendorId(null);
-                  }
-                }}
+                onPress={onCreateAddress}
                 style={styles.addAddressChip}
               >
                 <Ionicons color={colors.deepGreen} name="add" size={15} />

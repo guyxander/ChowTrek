@@ -75,9 +75,19 @@ export async function loadSavedAddresses(): Promise<{
 }
 
 export async function createSavedAddress(label: string, addressLine: string): Promise<AddressMutationResult> {
+  const normalizedLabel = label.trim();
+  const normalizedAddressLine = addressLine.trim();
+
+  if (!normalizedLabel || !normalizedAddressLine) {
+    return {
+      message: "Enter both an address label and delivery address.",
+      ok: false
+    };
+  }
+
   if (!supabase) {
     return {
-      address: buildLocalAddress(label, addressLine),
+      address: buildLocalAddress(normalizedLabel, normalizedAddressLine),
       message: "Address added locally. Configure Supabase to sync it.",
       ok: true
     };
@@ -88,7 +98,7 @@ export async function createSavedAddress(label: string, addressLine: string): Pr
 
   if (!userId) {
     return {
-      address: buildLocalAddress(label, addressLine),
+      address: buildLocalAddress(normalizedLabel, normalizedAddressLine),
       message: "Address added locally. Sign in with Google to sync it.",
       ok: true
     };
@@ -98,8 +108,8 @@ export async function createSavedAddress(label: string, addressLine: string): Pr
     .from("addresses")
     .insert({
       user_id: userId,
-      label,
-      address_line: addressLine
+      label: normalizedLabel,
+      address_line: normalizedAddressLine
     })
     .select("id,label,address_line,latitude,longitude")
     .single();
@@ -114,6 +124,71 @@ export async function createSavedAddress(label: string, addressLine: string): Pr
   return {
     address: mapAddressRow(data as AddressRow),
     message: "Address saved to Supabase.",
+    ok: true
+  };
+}
+
+export async function updateSavedAddress(
+  addressId: string,
+  label: string,
+  addressLine: string
+): Promise<AddressMutationResult> {
+  const normalizedLabel = label.trim();
+  const normalizedAddressLine = addressLine.trim();
+
+  if (!normalizedLabel || !normalizedAddressLine) {
+    return {
+      message: "Enter both an address label and delivery address.",
+      ok: false
+    };
+  }
+
+  if (!supabase) {
+    return {
+      address: {
+        ...buildLocalAddress(normalizedLabel, normalizedAddressLine),
+        id: addressId
+      },
+      message: "Address updated locally. Configure Supabase to sync it.",
+      ok: true
+    };
+  }
+
+  const userResult = await supabase.auth.getUser();
+  const userId = userResult.data.user?.id;
+
+  if (!userId) {
+    return {
+      address: {
+        ...buildLocalAddress(normalizedLabel, normalizedAddressLine),
+        id: addressId
+      },
+      message: "Address updated locally. Sign in with Google to sync changes.",
+      ok: true
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("addresses")
+    .update({
+      label: normalizedLabel,
+      address_line: normalizedAddressLine
+    })
+    .eq("id", addressId)
+    .eq("user_id", userId)
+    .select("id,label,address_line,latitude,longitude")
+    .single();
+
+  if (error) {
+    return {
+      message: `Address was not updated: ${error.message}`,
+      ok: false
+    };
+  }
+
+  return {
+    address: mapAddressRow(data as AddressRow),
+    message: "Address updated in Supabase.",
     ok: true
   };
 }

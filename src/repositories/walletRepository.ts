@@ -28,6 +28,10 @@ export type WalletResult = {
   message: string;
 };
 
+export type WalletTopUpResult = WalletResult & {
+  reference?: string;
+};
+
 const demoBalances: Record<WalletRole, number> = {
   customer: 0,
   merchant: 18400,
@@ -159,6 +163,73 @@ export async function requestWalletWithdrawal(
   return {
     ok: true,
     message: "Withdrawal request submitted. Admin review will release funds to the saved bank."
+  };
+}
+
+export async function requestWalletTopUp(
+  role: WalletRole,
+  amountNaira: number,
+  providerReference: string
+): Promise<WalletTopUpResult> {
+  if (!supabase) {
+    return { ok: false, message: "Supabase is not configured for wallet top-up requests." };
+  }
+
+  if (amountNaira < 100) {
+    return { ok: false, message: "Top-up amount must be at least NGN 100." };
+  }
+
+  const userResult = await supabase.auth.getUser();
+  const user = userResult.data.user;
+
+  if (!user) {
+    return { ok: false, message: "Sign in with Google before topping up your wallet." };
+  }
+
+  const walletResult = await supabase
+    .from("wallets")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("role", role)
+    .maybeSingle();
+
+  if (walletResult.error) {
+    return { ok: false, message: `Wallet lookup failed: ${walletResult.error.message}` };
+  }
+
+  let walletId = walletResult.data?.id as string | undefined;
+
+  if (!walletId) {
+    const createResult = await supabase
+      .from("wallets")
+      .insert({ user_id: user.id, role })
+      .select("id")
+      .single();
+
+    if (createResult.error) {
+      return { ok: false, message: `Wallet creation failed: ${createResult.error.message}` };
+    }
+
+    walletId = createResult.data.id as string;
+  }
+
+  const requestResult = await supabase.from("wallet_top_up_requests").insert({
+    wallet_id: walletId,
+    user_id: user.id,
+    amount_naira: amountNaira,
+    provider: "flutterwave",
+    provider_reference: providerReference,
+    status: "pending"
+  });
+
+  if (requestResult.error) {
+    return { ok: false, message: `Top-up request failed: ${requestResult.error.message}` };
+  }
+
+  return {
+    ok: true,
+    message: "Wallet top-up request created. Complete payment in Flutterwave.",
+    reference: providerReference
   };
 }
 

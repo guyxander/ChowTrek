@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useState } from "react";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { WalletPanel } from "../components/WalletPanel";
 import { colors } from "../theme/colors";
@@ -7,12 +8,19 @@ import { WalletSummary } from "../types/domain";
 
 type Props = {
   wallet: WalletSummary;
-  onAddMoney: () => void;
+  onAddMoney: (amountNaira: number) => void;
   onBack: () => void;
   onRefresh: () => void;
 };
 
 export function WalletScreen({ onAddMoney, onBack, onRefresh, wallet }: Props) {
+  const [topUpAmount, setTopUpAmount] = useState("5000");
+  const amountNaira = Number(topUpAmount.replace(/[^\d]/g, ""));
+
+  const submitTopUp = () => {
+    onAddMoney(amountNaira);
+  };
+
   return (
     <View>
       <View style={styles.topBar}>
@@ -25,7 +33,29 @@ export function WalletScreen({ onAddMoney, onBack, onRefresh, wallet }: Props) {
         </TouchableOpacity>
       </View>
 
-      <WalletPanel onAddMoney={onAddMoney} onRefresh={onRefresh} title="ChowTrek Wallet" wallet={wallet} />
+      <WalletPanel onAddMoney={() => onAddMoney(amountNaira)} onRefresh={onRefresh} title="ChowTrek Wallet" wallet={wallet} />
+
+      <View style={styles.topUpCard}>
+        <Text style={styles.topUpTitle}>Top up with Flutterwave</Text>
+        <Text style={styles.topUpCopy}>
+          Enter an amount, then complete payment in Flutterwave. Your top-up is recorded as pending until payment is verified.
+        </Text>
+        <View style={styles.amountRow}>
+          <Text style={styles.amountPrefix}>NGN</Text>
+          <TextInput
+            keyboardType="number-pad"
+            onChangeText={setTopUpAmount}
+            placeholder="5000"
+            placeholderTextColor={colors.muted}
+            style={styles.amountInput}
+            value={topUpAmount}
+          />
+        </View>
+        <TouchableOpacity onPress={submitTopUp} style={styles.topUpButton}>
+          <Ionicons color="#ffffff" name="card-outline" size={18} />
+          <Text style={styles.topUpButtonText}>Continue to Flutterwave</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.noteCard}>
         <Ionicons color={colors.deepGreen} name="shield-checkmark-outline" size={22} />
@@ -41,6 +71,29 @@ export function WalletScreen({ onAddMoney, onBack, onRefresh, wallet }: Props) {
 }
 
 const styles = StyleSheet.create({
+  amountInput: {
+    color: colors.text,
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "900",
+    paddingVertical: 12
+  },
+  amountPrefix: {
+    color: colors.deepGreen,
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  amountRow: {
+    alignItems: "center",
+    backgroundColor: colors.surfaceContainerLow,
+    borderColor: "rgba(191, 201, 195, 0.34)",
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 12,
+    paddingHorizontal: 12
+  },
   iconButton: {
     alignItems: "center",
     backgroundColor: colors.card,
@@ -86,5 +139,40 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 4,
     paddingVertical: 4
+  },
+  topUpButton: {
+    alignItems: "center",
+    backgroundColor: colors.orange,
+    borderRadius: 10,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    marginTop: 12,
+    paddingVertical: 13
+  },
+  topUpButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "900"
+  },
+  topUpCard: {
+    backgroundColor: colors.card,
+    borderColor: "rgba(191, 201, 195, 0.26)",
+    borderRadius: 14,
+    borderWidth: 1,
+    marginTop: 12,
+    padding: 14
+  },
+  topUpCopy: {
+    color: colors.muted,
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 19,
+    marginTop: 4
+  },
+  topUpTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "900"
   }
 });
