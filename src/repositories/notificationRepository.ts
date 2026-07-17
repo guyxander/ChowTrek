@@ -37,14 +37,11 @@ export async function requestPushNotificationPermission(): Promise<NotificationP
   }
 
   const tokenResult = await saveDevicePushToken(Notifications);
-
-  if (!tokenResult.ok) {
-    return tokenResult;
-  }
+  const tokenMessage = tokenResult.ok ? "Device token synced." : tokenResult.message;
 
   return {
     ok: true,
-    message: "Push notifications are enabled and synced for order and delivery updates."
+    message: `Push notifications are enabled for order and delivery updates. ${tokenMessage}`
   };
 }
 

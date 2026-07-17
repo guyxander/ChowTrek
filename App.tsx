@@ -364,6 +364,15 @@ export default function App() {
     try {
       const result = await requestPushNotificationPermission();
       setDataNotice(result.message);
+      if (result.ok) {
+        const enabledPreferences = notificationPreferences.map((preference) => ({
+          ...preference,
+          enabled: true
+        }));
+
+        setNotificationPreferences(enabledPreferences);
+        await Promise.all(enabledPreferences.map(syncNotificationPreference));
+      }
       Alert.alert(result.ok ? "Push alerts enabled" : "Push alerts not enabled", result.message);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Push notification setup failed.";
