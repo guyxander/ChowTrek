@@ -1,5 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { FoodStatus, NotificationPreference } from "../types/domain";
+import { requireCurrentAgentCanReceiveOrders } from "./profileCompletionRepository";
 
 type SyncResult = {
   ok: true;
@@ -111,6 +112,14 @@ export async function syncAgentAvailability(isAvailable: boolean): Promise<SyncR
     return agent;
   }
 
+  if (isAvailable) {
+    const completion = await requireCurrentAgentCanReceiveOrders();
+
+    if (!completion.ok) {
+      return completion;
+    }
+  }
+
   const result = await supabase!
     .from("delivery_agent_profiles")
     .update({ is_available: isAvailable })
@@ -136,6 +145,14 @@ export async function syncDeliveryClaim(
 
   if (!agent.ok) {
     return agent;
+  }
+
+  if (shouldClaim) {
+    const completion = await requireCurrentAgentCanReceiveOrders();
+
+    if (!completion.ok) {
+      return completion;
+    }
   }
 
   const result = shouldClaim
@@ -179,6 +196,12 @@ export async function syncDeliveryStage(
 
   if (!agent.ok) {
     return agent;
+  }
+
+  const completion = await requireCurrentAgentCanReceiveOrders();
+
+  if (!completion.ok) {
+    return completion;
   }
 
   const result = await supabase!.rpc("update_assigned_delivery_stage", {

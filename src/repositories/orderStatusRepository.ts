@@ -1,5 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { OrderStatus } from "../types/domain";
+import { requireMerchantCanReceiveOrders } from "./profileCompletionRepository";
 
 export type OrderStatusResult = {
   ok: boolean;
@@ -34,6 +35,12 @@ export async function updateMerchantOrderStatus(
 
   if (!user) {
     return { ok: false, message: "Sign in with Google before updating orders." };
+  }
+
+  const completion = await requireMerchantCanReceiveOrders(user.id);
+
+  if (!completion.ok) {
+    return completion;
   }
 
   const result = await supabase

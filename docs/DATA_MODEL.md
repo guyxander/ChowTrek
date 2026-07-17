@@ -7,6 +7,7 @@ This is the implementation map for the Supabase schema. It is not a migration ye
 - `profiles`: account identity, display name, optional phone, active role.
 - `merchant_profiles`: approved merchant details, storefront metadata, status.
 - `delivery_agent_profiles`: verification, ratings, availability, delivery capacity.
+- `role_verification_details`: private merchant shop and delivery agent home verification addresses, readable by the owner and admins only.
 - `categories`: product/vendor categories.
 - `products`: merchant-owned sellable items and food availability status.
 - `addresses`: customer saved addresses.
@@ -29,8 +30,11 @@ This is the implementation map for the Supabase schema. It is not a migration ye
 ## RLS Direction
 
 - Customers can read and mutate only their own profile, addresses, orders, ratings, follows, and notification settings.
+- Buyers must save a valid phone number before checkout can create a live order.
+- Merchants must save a valid phone number and private shop verification address before they can receive live orders or manage merchant order actions.
+- Delivery agents must save a valid phone number and private home verification address before they can go available, claim deliveries, or update delivery stages.
 - Merchants can read and mutate only their own storefront, products, timeline events, and assigned order queue.
-- Delivery agents can read open deliveries, claim an unassigned delivery, and update only delivery status/GPS fields for their assignments.
+- Delivery agents can read open deliveries, claim an unassigned delivery, and update only delivery status/GPS fields for their assignments after profile completion.
 - Admins use elevated access through verified admin role checks stored outside user-editable metadata.
 
 ## Verification Rule

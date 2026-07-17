@@ -73,11 +73,13 @@ Connected project discovered through the Supabase app:
    - `docs/supabase_production_hardening_patch.sql`
    - `docs/supabase_wallet_patch.sql`
    - `docs/supabase_foreign_key_indexes_patch.sql`
+   - `docs/supabase_profile_completion_patch.sql`
 
    They allow signed-in users to activate their own merchant/agent records, create customer
    checkout orders, upload product media, sync push tokens, and let merchant/admin accounts manage
-   only the rows their policies allow. The index patch keeps common role, wallet, order, and
-   storefront joins responsive as usage grows.
+   only the rows their policies allow. The profile completion patch stores private merchant shop
+   and delivery agent home verification addresses outside public storefront tables. The index patch
+   keeps common role, wallet, order, and storefront joins responsive as usage grows.
 
 8. For admin accounts, add the admin role through `raw_app_meta_data`, not user-editable metadata.
    The production hardening patch expects this app metadata shape:
@@ -109,10 +111,12 @@ After Google sign-in, these app actions attempt to sync with Supabase:
 - Change merchant product availability through `products.status`.
 - Save merchant storefront profile details through `merchant_profiles`.
 - Create checkout `orders`, `order_items`, `deliveries`, and `transactions`.
+- Block checkout until the buyer profile has a phone number and the merchant can privately receive orders.
 - Create and read role wallets, wallet ledger entries, and withdrawal requests.
 - Sync push tokens through `device_push_tokens`.
 - Toggle delivery agent availability through `delivery_agent_profiles.is_available`.
 - Claim/release delivery opportunities through `deliveries.agent_id`.
+- Block merchant and delivery receiving actions until phone and private verification address are saved.
 - Load and approve admin queues through admin-only RLS policies.
 
 Realtime subscriptions refresh the app snapshot when key commerce tables change.

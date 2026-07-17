@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from "react-native";
@@ -19,6 +20,11 @@ import {
   activateAgentProfile,
   activateMerchantProfile
 } from "../repositories/roleOnboardingRepository";
+import {
+  loadProfileCompletion,
+  saveProfilePhone,
+  saveRoleVerificationAddress
+} from "../repositories/profileCompletionRepository";
 import { colors } from "../theme/colors";
 import { NotificationPreference, TabKey, WalletSummary } from "../types/domain";
 import { formatNaira } from "../utils/money";
@@ -78,12 +84,16 @@ export function ProfileScreen({
   const [message, setMessage] = useState("Sign in to sync your ChowTrek profile.");
   const [isSending, setIsSending] = useState(false);
   const [signedInIdentity, setSignedInIdentity] = useState<string | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [merchantAddress, setMerchantAddress] = useState("");
+  const [agentAddress, setAgentAddress] = useState("");
 
   useEffect(() => {
     getCurrentSessionIdentity().then((identity) => {
       setSignedInIdentity(identity);
       if (identity) {
         setMessage("Your profile is synced with Google.");
+        refreshProfileCompletion();
       }
     });
   }, []);
@@ -94,6 +104,7 @@ export function ProfileScreen({
     setMessage(result.message);
     if (result.ok && result.identity) {
       setSignedInIdentity(result.identity);
+      refreshProfileCompletion();
     }
     setIsSending(false);
   }
@@ -104,6 +115,52 @@ export function ProfileScreen({
     setMessage(result.message);
     if (result.ok) {
       setSignedInIdentity(null);
+      setPhoneNumber("");
+      setMerchantAddress("");
+      setAgentAddress("");
+    }
+    setIsSending(false);
+  }
+
+  async function refreshProfileCompletion() {
+    const result = await loadProfileCompletion();
+
+    if (!result.ok) {
+      setMessage(result.message);
+      return;
+    }
+
+    setPhoneNumber(result.data.phone);
+    setMerchantAddress(result.data.merchantVerificationAddress);
+    setAgentAddress(result.data.agentVerificationAddress);
+  }
+
+  async function handleSavePhone() {
+    setIsSending(true);
+    const result = await saveProfilePhone(phoneNumber);
+    setMessage(result.message);
+    if (result.ok) {
+      refreshProfileCompletion();
+    }
+    setIsSending(false);
+  }
+
+  async function handleSaveMerchantAddress() {
+    setIsSending(true);
+    const result = await saveRoleVerificationAddress("merchant", merchantAddress);
+    setMessage(result.message);
+    if (result.ok) {
+      refreshProfileCompletion();
+    }
+    setIsSending(false);
+  }
+
+  async function handleSaveAgentAddress() {
+    setIsSending(true);
+    const result = await saveRoleVerificationAddress("delivery_agent", agentAddress);
+    setMessage(result.message);
+    if (result.ok) {
+      refreshProfileCompletion();
     }
     setIsSending(false);
   }
@@ -174,6 +231,62 @@ export function ProfileScreen({
           onPress={onOpenWallet}
         />
         <BentoAction icon="notifications" label="Notifications" tone="orange" onPress={onOpenNotifications} />
+      </View>
+
+      <SectionTitle title="Profile Requirements" />
+      <View style={styles.requirementsCard}>
+        <View style={styles.requirementHeader}>
+          <Ionicons color={colors.deepGreen} name="checkmark-done-circle" size={22} />
+          <Text style={styles.requirementTitle}>Required before orders</Text>
+        </View>
+        <Text style={styles.requirementCopy}>
+          Buyers need a saved phone before checkout. Merchants and delivery agents also need a
+          private verification address visible only to ChowTrek admins.
+        </Text>
+        <LabeledInput
+          icon="call-outline"
+          label="Phone number"
+          onChangeText={setPhoneNumber}
+          placeholder="+234..."
+          value={phoneNumber}
+        />
+        <TouchableOpacity
+          disabled={isSending}
+          onPress={handleSavePhone}
+          style={[styles.saveRequirementButton, isSending ? styles.disabledButton : null]}
+        >
+          <Text style={styles.saveRequirementText}>Save phone</Text>
+        </TouchableOpacity>
+        <LabeledInput
+          icon="storefront-outline"
+          label="Merchant shop address"
+          multiline
+          onChangeText={setMerchantAddress}
+          placeholder="Shop number, street, city"
+          value={merchantAddress}
+        />
+        <TouchableOpacity
+          disabled={isSending}
+          onPress={handleSaveMerchantAddress}
+          style={[styles.secondaryRequirementButton, isSending ? styles.disabledButton : null]}
+        >
+          <Text style={styles.secondaryRequirementText}>Save merchant verification</Text>
+        </TouchableOpacity>
+        <LabeledInput
+          icon="home-outline"
+          label="Delivery agent home address"
+          multiline
+          onChangeText={setAgentAddress}
+          placeholder="House number, street, city"
+          value={agentAddress}
+        />
+        <TouchableOpacity
+          disabled={isSending}
+          onPress={handleSaveAgentAddress}
+          style={[styles.secondaryRequirementButton, isSending ? styles.disabledButton : null]}
+        >
+          <Text style={styles.secondaryRequirementText}>Save delivery verification</Text>
+        </TouchableOpacity>
       </View>
 
       <SectionTitle title="Role Dashboards" />
@@ -304,6 +417,39 @@ function RoleButton({
   );
 }
 
+function LabeledInput({
+  icon,
+  label,
+  multiline,
+  onChangeText,
+  placeholder,
+  value
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  multiline?: boolean;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.inputBlock}>
+      <View style={styles.inputLabelRow}>
+        <Ionicons color={colors.muted} name={icon} size={18} />
+        <Text style={styles.inputLabel}>{label}</Text>
+      </View>
+      <TextInput
+        multiline={multiline}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.muted}
+        style={[styles.textInput, multiline ? styles.multilineInput : null]}
+        value={value}
+      />
+    </View>
+  );
+}
+
 function MenuRow({
   danger,
   icon,
@@ -424,6 +570,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "800"
   },
+  inputBlock: {
+    gap: 8
+  },
+  inputLabel: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: "800"
+  },
+  inputLabelRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8
+  },
   legalRow: {
     flexDirection: "row",
     gap: 28
@@ -498,6 +657,11 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 15,
     fontWeight: "800"
+  },
+  multilineInput: {
+    minHeight: 78,
+    paddingTop: 12,
+    textAlignVertical: "top"
   },
   notificationCard: {
     backgroundColor: colors.card,
@@ -581,6 +745,43 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     textAlign: "center"
   },
+  requirementCopy: {
+    color: colors.muted,
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 19
+  },
+  requirementHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8
+  },
+  requirementTitle: {
+    color: colors.deepGreen,
+    fontSize: 16,
+    fontWeight: "900"
+  },
+  requirementsCard: {
+    backgroundColor: colors.card,
+    borderColor: "rgba(191, 201, 195, 0.28)",
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 14,
+    marginBottom: 24,
+    padding: 16
+  },
+  saveRequirementButton: {
+    alignItems: "center",
+    backgroundColor: colors.deepGreen,
+    borderRadius: 8,
+    justifyContent: "center",
+    paddingVertical: 12
+  },
+  saveRequirementText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "900"
+  },
   sectionHeaderRow: {
     alignItems: "flex-end",
     flexDirection: "row",
@@ -592,6 +793,19 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "900",
     marginBottom: 14
+  },
+  secondaryRequirementButton: {
+    alignItems: "center",
+    borderColor: colors.deepGreen,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: "center",
+    paddingVertical: 12
+  },
+  secondaryRequirementText: {
+    color: colors.deepGreen,
+    fontSize: 14,
+    fontWeight: "900"
   },
   statusText: {
     color: colors.muted,
@@ -617,6 +831,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: 14
+  },
+  textInput: {
+    backgroundColor: colors.surfaceContainerLow,
+    borderColor: "rgba(191, 201, 195, 0.52)",
+    borderRadius: 8,
+    borderWidth: 1,
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: "700",
+    paddingHorizontal: 12,
+    paddingVertical: 11
   },
   versionText: {
     color: colors.muted,

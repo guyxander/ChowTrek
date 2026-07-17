@@ -1,6 +1,10 @@
 import { supabase } from "../lib/supabase";
 import { flutterwavePaymentUrl, isFlutterwaveConfigured } from "../lib/productionConfig";
 import { CartItem, PaymentMode } from "../types/domain";
+import {
+  requireBuyerCanCheckout,
+  requireMerchantCanReceiveOrderForMerchantId
+} from "./profileCompletionRepository";
 
 export type CheckoutResult = {
   ok: boolean;
@@ -54,12 +58,25 @@ export async function createCheckoutOrder(
     return { ok: false, message: "Sign in with Google before checkout." };
   }
 
+  const buyerCompletion = await requireBuyerCanCheckout();
+
+  if (!buyerCompletion.ok) {
+    return buyerCompletion;
+  }
+
   const subtotalNaira = cartItems.reduce(
     (sum, item) => sum + item.quantity * item.unitPriceNaira,
     0
   );
   const totalNaira = subtotalNaira + deliveryFeeNaira;
   const merchantId = cartItems[0].vendorId!;
+
+  const merchantCompletion = await requireMerchantCanReceiveOrderForMerchantId(merchantId);
+
+  if (!merchantCompletion.ok) {
+    return merchantCompletion;
+  }
+
   const paymentReference = `CHOW-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
   const normalizedPaymentMode =
     paymentMode === "Flutterwave"

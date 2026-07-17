@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { requireMerchantCanReceiveOrders } from "./profileCompletionRepository";
 
 export type MerchantProductResult = {
   ok: boolean;
@@ -47,6 +48,12 @@ export async function createMerchantProduct(
 
   if (!user) {
     return { ok: false, message: "Sign in with Google before creating merchant products." };
+  }
+
+  const completion = await requireMerchantCanReceiveOrders(user.id);
+
+  if (!completion.ok) {
+    return completion;
   }
 
   const merchantResult = await supabase
@@ -125,6 +132,12 @@ export async function updateMerchantStorefront(
 
   if (!user) {
     return { ok: false, message: "Sign in with Google before updating your storefront." };
+  }
+
+  const completion = await requireMerchantCanReceiveOrders(user.id);
+
+  if (!completion.ok) {
+    return completion;
   }
 
   const result = await supabase
