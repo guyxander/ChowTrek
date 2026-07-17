@@ -111,7 +111,8 @@ as $$
 $$;
 
 revoke all on function public.can_manage_wallet_role(text) from public;
-grant execute on function public.can_manage_wallet_role(text) to authenticated;
+revoke execute on function public.can_manage_wallet_role(text) from anon;
+revoke execute on function public.can_manage_wallet_role(text) from authenticated;
 
 drop policy if exists "users read own wallets" on public.wallets;
 create policy "users read own wallets"
@@ -326,6 +327,7 @@ end;
 $$;
 
 revoke all on function public.pay_order_with_wallet(uuid) from public;
+revoke execute on function public.pay_order_with_wallet(uuid) from anon;
 grant execute on function public.pay_order_with_wallet(uuid) to authenticated;
 
 grant select, insert on public.wallets to authenticated;

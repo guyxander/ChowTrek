@@ -35,6 +35,36 @@ for (const table of expectedTables) {
   }
 }
 
+const catalogQueries = {
+  merchant_catalog: supabase
+    .from("merchant_profiles")
+    .select("id,business_name,description,neighborhood")
+    .limit(20),
+  product_catalog: supabase
+    .from("products")
+    .select("id,merchant_id,name,price_naira,status,image_url,merchant_profiles(id,business_name,description,neighborhood)")
+    .limit(40),
+  timeline_catalog: supabase
+    .from("vendor_timeline_events")
+    .select("id,title,body,type,created_at,merchant_profiles(id,business_name,description,neighborhood)")
+    .order("created_at", { ascending: false })
+    .limit(30)
+};
+
+for (const [label, query] of Object.entries(catalogQueries)) {
+  const { data, error } = await query;
+
+  if (error) {
+    hasError = true;
+    console.error(`${label}: ERROR ${error.message}`);
+  } else if (!data || data.length === 0) {
+    hasError = true;
+    console.error(`${label}: ERROR no rows returned`);
+  } else {
+    console.log(`${label}: OK rows=${data.length}`);
+  }
+}
+
 if (hasError) {
   process.exit(1);
 }

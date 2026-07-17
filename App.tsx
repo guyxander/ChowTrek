@@ -16,6 +16,11 @@ import { WalletScreen } from "./src/screens/WalletScreen";
 import { createCheckoutOrder } from "./src/repositories/checkoutRepository";
 import { getInitialCommerceSnapshot, loadCommerceSnapshot } from "./src/repositories/commerceSnapshot";
 import {
+  createSavedAddress,
+  fallbackAddresses,
+  loadSavedAddresses
+} from "./src/repositories/addressRepository";
+import {
   createMerchantProduct,
   updateMerchantStorefront
 } from "./src/repositories/merchantProductRepository";
@@ -40,6 +45,7 @@ import {
   OrderStatus,
   PaymentMode,
   Product,
+  SavedAddress,
   TabKey,
   TimelineEvent,
   Vendor,
@@ -76,6 +82,7 @@ export default function App() {
   const [dataNotice, setDataNotice] = useState(initialSnapshot.warning ?? "Loading ChowTrek data...");
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("Flutterwave");
   const [wallets, setWallets] = useState<Record<WalletRole, WalletSummary>>(initialWallets);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>(fallbackAddresses);
   const [isAgentAvailable, setIsAgentAvailable] = useState(true);
   const [claimedOpportunityIds, setClaimedOpportunityIds] = useState<string[]>([]);
   const [pickedUpOpportunityIds, setPickedUpOpportunityIds] = useState<string[]>([]);
@@ -124,6 +131,7 @@ export default function App() {
 
     applySnapshot();
     refreshWallets();
+    refreshSavedAddresses();
     const unsubscribe = subscribeToCommerceChanges(refreshFromRealtime, (message) => {
       if (isMounted) {
         setDataNotice(message);
@@ -148,6 +156,35 @@ export default function App() {
     ]);
 
     setWallets({ customer, merchant, agent, admin });
+  }
+
+  async function refreshSavedAddresses() {
+    const result = await loadSavedAddresses();
+    setSavedAddresses(result.addresses);
+
+    if (result.message) {
+      setDataNotice(result.message);
+    }
+  }
+
+  async function addSavedAddress() {
+    const nextAddressNumber = savedAddresses.length + 1;
+    const result = await createSavedAddress(`Address ${nextAddressNumber}`, "New delivery address");
+    setDataNotice(result.message);
+
+    if (!result.ok || !result.address) {
+      return null;
+    }
+
+    setSavedAddresses((currentAddresses) => {
+      if (currentAddresses.some((address) => address.id === result.address?.id)) {
+        return currentAddresses;
+      }
+
+      return [...currentAddresses, result.address as SavedAddress];
+    });
+
+    return result.address;
   }
 
   async function withdrawFromWallet(role: WalletRole, amountNaira: number) {
@@ -396,9 +433,11 @@ export default function App() {
         {activeTab === "home" ? (
           <View style={[styles.content, styles.fixedCustomerContent]}>
             <HomeScreen
+              addresses={savedAddresses}
               cartItems={cartItems}
               dataNotice={dataNotice}
               onAddToCart={addProductToCart}
+              onCreateAddress={addSavedAddress}
               onCartQuantityChange={changeCartQuantity}
               onOpenCart={() => changeActiveTab("orders")}
               onShowNotice={setDataNotice}

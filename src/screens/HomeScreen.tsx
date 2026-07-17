@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 import { BrandLogo } from "../components/BrandLogo";
@@ -12,38 +12,25 @@ import { sharedStyles } from "../theme/sharedStyles";
 import { CartItem, FulfilmentMode, Product, SavedAddress, Vendor } from "../types/domain";
 
 type Props = {
+  addresses: SavedAddress[];
   cartItems: CartItem[];
   dataNotice: string;
   products: Product[];
   vendors: Vendor[];
   onAddToCart: (product: Product, vendor: Vendor) => void;
+  onCreateAddress: () => Promise<SavedAddress | null>;
   onCartQuantityChange: (itemId: string, delta: number) => void;
   onOpenCart: () => void;
   onShowNotice: (message: string) => void;
   onToggleFollow: (vendorId: string) => void;
 };
 
-const savedAddresses: SavedAddress[] = [
-  {
-    id: "lekki-home",
-    label: "Home",
-    detail: "Lekki Phase 1",
-    area: "Around Lekki Phase 1",
-    distanceBiasKm: 0
-  },
-  {
-    id: "vi-office",
-    label: "Work",
-    detail: "Victoria Island",
-    area: "Around Victoria Island",
-    distanceBiasKm: 1.1
-  }
-];
-
 export function HomeScreen({
+  addresses,
   cartItems,
   dataNotice,
   onAddToCart,
+  onCreateAddress,
   onCartQuantityChange,
   onOpenCart,
   onShowNotice,
@@ -54,9 +41,15 @@ export function HomeScreen({
   const [query, setQuery] = useState("");
   const [selectedMode, setSelectedMode] = useState<FulfilmentMode | null>(null);
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
-  const [addresses, setAddresses] = useState(savedAddresses);
-  const [selectedAddressId, setSelectedAddressId] = useState(savedAddresses[0].id);
+  const [selectedAddressId, setSelectedAddressId] = useState(addresses[0]?.id ?? "");
   const selectedAddress = addresses.find((address) => address.id === selectedAddressId) ?? addresses[0];
+
+  useEffect(() => {
+    if (!addresses.some((address) => address.id === selectedAddressId)) {
+      setSelectedAddressId(addresses[0]?.id ?? "");
+    }
+  }, [addresses, selectedAddressId]);
+
   const addressVendors = useMemo(
     () =>
       vendors
@@ -166,18 +159,13 @@ export function HomeScreen({
               );
             })}
             <TouchableOpacity
-              onPress={() => {
-                const newAddress: SavedAddress = {
-                  id: `address-${Date.now()}`,
-                  label: "New",
-                  detail: "New saved address",
-                  area: "Around your new address",
-                  distanceBiasKm: 0.6
-                };
-                setAddresses((currentAddresses) => [...currentAddresses, newAddress]);
-                setSelectedAddressId(newAddress.id);
-                setSelectedVendorId(null);
-                onShowNotice("New address slot added. Connect Supabase address saving to persist it.");
+              onPress={async () => {
+                const newAddress = await onCreateAddress();
+
+                if (newAddress) {
+                  setSelectedAddressId(newAddress.id);
+                  setSelectedVendorId(null);
+                }
               }}
               style={styles.addAddressChip}
             >

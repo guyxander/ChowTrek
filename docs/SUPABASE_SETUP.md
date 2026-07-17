@@ -72,10 +72,12 @@ Connected project discovered through the Supabase app:
    - `docs/supabase_delivery_stage_patch.sql`
    - `docs/supabase_production_hardening_patch.sql`
    - `docs/supabase_wallet_patch.sql`
+   - `docs/supabase_foreign_key_indexes_patch.sql`
 
    They allow signed-in users to activate their own merchant/agent records, create customer
    checkout orders, upload product media, sync push tokens, and let merchant/admin accounts manage
-   only the rows their policies allow.
+   only the rows their policies allow. The index patch keeps common role, wallet, order, and
+   storefront joins responsive as usage grows.
 
 8. For admin accounts, add the admin role through `raw_app_meta_data`, not user-editable metadata.
    The production hardening patch expects this app metadata shape:
