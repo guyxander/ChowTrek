@@ -282,7 +282,7 @@ function CartTab({
                       >
                         <Ionicons
                           color={isActive ? "#ffffff" : colors.deepGreen}
-                          name={mode === "Pickup" ? "bag-handle-outline" : "bicycle-outline"}
+                          name={getFulfilmentIcon(mode)}
                           size={16}
                         />
                         <Text
@@ -302,7 +302,7 @@ function CartTab({
                 <View style={styles.deliveryMeta}>
                   <Ionicons
                     color={colors.deepGreen}
-                    name={selectedMode === "Pickup" ? "storefront-outline" : "bicycle-outline"}
+                    name={getFulfilmentIcon(selectedMode)}
                     size={18}
                   />
                   <Text style={styles.cardSubtle}>
@@ -433,6 +433,18 @@ function groupCartItems(items: CartItem[]): VendorCart[] {
 
 function getDefaultFulfilmentMode(modes: FulfilmentMode[]) {
   return modes.includes("Trek Delivery") ? "Trek Delivery" : modes[0] ?? "Pickup";
+}
+
+function getFulfilmentIcon(mode: FulfilmentMode): keyof typeof Ionicons.glyphMap {
+  if (mode === "Pickup") {
+    return "storefront-outline";
+  }
+
+  if (mode === "Trek Delivery") {
+    return "walk";
+  }
+
+  return "bicycle-outline";
 }
 
 function getOngoingLabel(order: Order) {
