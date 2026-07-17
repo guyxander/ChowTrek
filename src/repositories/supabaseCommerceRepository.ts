@@ -37,7 +37,7 @@ type TimelineRow = {
 
 type OrderRow = {
   id: string;
-  status: "preparing" | "ready" | "in_transit" | "delivered" | "cancelled" | "placed" | "accepted" | "cart";
+  status: "preparing" | "ready" | "in_transit" | "arrived" | "delivered" | "cancelled" | "placed" | "accepted" | "cart";
   fulfilment_mode: "pickup" | "trek_delivery" | "express";
   total_naira: number;
   payment_mode: "flutterwave" | "pay_on_delivery" | "wallet";
@@ -49,7 +49,7 @@ type OrderRow = {
 
 type DeliveryRow = {
   id: string;
-  status: "preparing" | "ready" | "in_transit" | "delivered" | "cancelled" | "placed" | "accepted" | "cart";
+  status: "preparing" | "ready" | "in_transit" | "arrived" | "delivered" | "cancelled" | "placed" | "accepted" | "cart";
   agent_id: string | null;
   orders?: OrderWithMerchantRow | OrderWithMerchantRow[] | null;
 };
@@ -83,6 +83,7 @@ const orderStatusMap = {
   preparing: "Preparing",
   ready: "Ready",
   in_transit: "In Transit",
+  arrived: "Arrived",
   delivered: "Delivered",
   cancelled: "Cancelled"
 } as const;
@@ -146,7 +147,7 @@ export async function loadSupabaseCommerceSnapshot(): Promise<Partial<CommerceSn
         supabase
           .from("deliveries")
           .select("id,status,agent_id,orders(total_naira,fulfilment_mode,merchant_profiles(id,business_name,description,neighborhood))")
-          .in("status", ["placed", "accepted", "ready"])
+          .in("status", ["placed", "accepted", "ready", "in_transit", "arrived"])
           .limit(10)
       ])
     : [
@@ -284,8 +285,29 @@ function mapDeliveryOpportunity(row: DeliveryRow, index: number): AgentOpportuni
     route: `${merchant?.business_name ?? "Merchant"} -> Customer (${mode})`,
     payoutNaira: Math.max(700, Math.round((order?.total_naira ?? 6000) * 0.12)),
     distanceKm: 1.6 + index * 0.5,
-    eligibility: row.agent_id ? "Watch" : index === 0 ? "Best fit" : "Nearby"
+    eligibility: row.agent_id ? "Watch" : index === 0 ? "Best fit" : "Nearby",
+    stage: mapDeliveryStage(row.status)
   };
+}
+
+function mapDeliveryStage(status: DeliveryRow["status"]): AgentOpportunity["stage"] {
+  if (status === "delivered") {
+    return "Delivered";
+  }
+
+  if (status === "arrived") {
+    return "Arrived";
+  }
+
+  if (status === "in_transit") {
+    return "Picked Up";
+  }
+
+  if (status === "accepted" || status === "ready") {
+    return "Claimed";
+  }
+
+  return "Open";
 }
 
 function mapNotificationPreference(row: NotificationPreferenceRow): NotificationPreference {

@@ -6,10 +6,11 @@ export type OrderStatusResult = {
   message: string;
 };
 
-const orderStatusToDb: Record<OrderStatus, "preparing" | "ready" | "in_transit" | "delivered" | "cancelled"> = {
+const orderStatusToDb: Record<OrderStatus, "preparing" | "ready" | "in_transit" | "arrived" | "delivered" | "cancelled"> = {
   Preparing: "preparing",
   Ready: "ready",
   "In Transit": "in_transit",
+  Arrived: "arrived",
   Delivered: "delivered",
   Cancelled: "cancelled"
 };

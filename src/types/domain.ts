@@ -5,7 +5,7 @@ export type StaffTabKey = "merchant" | "agent" | "admin";
 export type TabKey = CustomerTabKey | StaffTabKey;
 
 export type FoodStatus = "Preparing" | "Food Ready" | "Sold Out";
-export type OrderStatus = "Preparing" | "Ready" | "In Transit" | "Delivered" | "Cancelled";
+export type OrderStatus = "Preparing" | "Ready" | "In Transit" | "Arrived" | "Delivered" | "Cancelled";
 export type FulfilmentMode = "Trek Delivery" | "Pickup" | "Express";
 export type UserRole = "Customer" | "Merchant" | "Delivery Agent" | "Admin";
 
@@ -120,7 +120,7 @@ export type AgentOpportunity = {
   payoutNaira: number;
   distanceKm: number;
   eligibility: "Best fit" | "Nearby" | "Watch";
-  stage?: "Open" | "Claimed" | "Picked Up" | "Delivered";
+  stage?: "Open" | "Claimed" | "Picked Up" | "Arrived" | "Delivered";
 };
 
 export type NotificationPreference = {

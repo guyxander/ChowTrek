@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { colors } from "../theme/colors";
 import { OrderStatus } from "../types/domain";
 
-const steps: OrderStatus[] = ["Preparing", "Ready", "In Transit", "Delivered"];
+const steps: OrderStatus[] = ["Preparing", "Ready", "In Transit", "Arrived", "Delivered"];
 
 type Props = {
   status: OrderStatus;

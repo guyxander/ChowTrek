@@ -173,7 +173,7 @@ export async function syncDeliveryClaim(
 
 export async function syncDeliveryStage(
   deliveryId: string,
-  status: "in_transit" | "delivered"
+  status: "in_transit" | "arrived" | "delivered"
 ): Promise<SyncResult> {
   const agent = await getCurrentAgentProfileId();
 
@@ -181,23 +181,13 @@ export async function syncDeliveryStage(
     return agent;
   }
 
-  const result = await supabase!
-    .from("deliveries")
-    .update({ status, last_seen_at: new Date().toISOString() })
-    .eq("id", deliveryId)
-    .eq("agent_id", agent.id)
-    .select("id")
-    .maybeSingle();
+  const result = await supabase!.rpc("update_assigned_delivery_stage", {
+    target_delivery_id: deliveryId,
+    target_status: status
+  });
 
   if (result.error) {
     return formatFailure("Delivery stage sync failed", result.error.message);
-  }
-
-  if (!result.data) {
-    return {
-      ok: false,
-      message: "Delivery stage stayed local. This delivery is not assigned to this agent."
-    };
   }
 
   return {
@@ -205,7 +195,9 @@ export async function syncDeliveryStage(
     message:
       status === "in_transit"
         ? "Pickup stage synced to Supabase."
-        : "Delivery completion synced to Supabase."
+        : status === "arrived"
+          ? "Arrival stage synced to Supabase for buyer and merchant."
+          : "Delivery completion synced to Supabase."
   };
 }
 

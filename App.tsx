@@ -134,6 +134,7 @@ export default function App() {
   const [isAgentAvailable, setIsAgentAvailable] = useState(true);
   const [claimedOpportunityIds, setClaimedOpportunityIds] = useState<string[]>([]);
   const [pickedUpOpportunityIds, setPickedUpOpportunityIds] = useState<string[]>([]);
+  const [arrivedOpportunityIds, setArrivedOpportunityIds] = useState<string[]>([]);
   const [deliveredOpportunityIds, setDeliveredOpportunityIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -523,6 +524,7 @@ export default function App() {
 
     if (!shouldClaim) {
       setPickedUpOpportunityIds((currentIds) => currentIds.filter((id) => id !== opportunityId));
+      setArrivedOpportunityIds((currentIds) => currentIds.filter((id) => id !== opportunityId));
       setDeliveredOpportunityIds((currentIds) => currentIds.filter((id) => id !== opportunityId));
     }
 
@@ -541,11 +543,49 @@ export default function App() {
     );
     const result = await syncDeliveryStage(opportunityId, "in_transit");
     setDataNotice(result.message);
+
+    if (result.ok) {
+      const snapshot = await loadCommerceSnapshot();
+      setOrders(snapshot.orders);
+      setAgentOpportunities(snapshot.agentOpportunities);
+    }
+  }
+
+  async function markOpportunityArrived(opportunityId: string) {
+    const opportunity = agentOpportunities.find((item) => item.id === opportunityId);
+    const isPickedUp =
+      pickedUpOpportunityIds.includes(opportunityId) ||
+      opportunity?.stage === "Picked Up" ||
+      opportunity?.stage === "Arrived" ||
+      opportunity?.stage === "Delivered";
+
+    if (!isPickedUp) {
+      setDataNotice("Mark pickup before marking arrival.");
+      return;
+    }
+
+    setArrivedOpportunityIds((currentIds) =>
+      currentIds.includes(opportunityId) ? currentIds : [...currentIds, opportunityId]
+    );
+    const result = await syncDeliveryStage(opportunityId, "arrived");
+    setDataNotice(result.message);
+
+    if (result.ok) {
+      const snapshot = await loadCommerceSnapshot();
+      setOrders(snapshot.orders);
+      setAgentOpportunities(snapshot.agentOpportunities);
+    }
   }
 
   async function markOpportunityDelivered(opportunityId: string) {
-    if (!pickedUpOpportunityIds.includes(opportunityId)) {
-      setDataNotice("Mark pickup before completing delivery.");
+    const opportunity = agentOpportunities.find((item) => item.id === opportunityId);
+    const hasArrived =
+      arrivedOpportunityIds.includes(opportunityId) ||
+      opportunity?.stage === "Arrived" ||
+      opportunity?.stage === "Delivered";
+
+    if (!hasArrived) {
+      setDataNotice("Mark arrival before completing delivery.");
       return;
     }
 
@@ -554,6 +594,12 @@ export default function App() {
     );
     const result = await syncDeliveryStage(opportunityId, "delivered");
     setDataNotice(result.message);
+
+    if (result.ok) {
+      const snapshot = await loadCommerceSnapshot();
+      setOrders(snapshot.orders);
+      setAgentOpportunities(snapshot.agentOpportunities);
+    }
   }
 
   async function toggleAgentAvailability() {
@@ -705,11 +751,13 @@ export default function App() {
               <AgentScreen
                 activeSection={agentSection}
                 agentOpportunities={agentOpportunities}
+                arrivedOpportunityIds={arrivedOpportunityIds}
                 claimedOpportunityIds={claimedOpportunityIds}
                 deliveredOpportunityIds={deliveredOpportunityIds}
                 isAvailable={isAgentAvailable}
                 pickedUpOpportunityIds={pickedUpOpportunityIds}
                 onBack={goBack}
+                onMarkArrived={markOpportunityArrived}
                 onMarkDelivered={markOpportunityDelivered}
                 onMarkPickedUp={markOpportunityPickedUp}
                 onToggleAvailability={toggleAgentAvailability}

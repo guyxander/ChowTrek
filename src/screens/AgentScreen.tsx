@@ -13,6 +13,7 @@ type Props = {
   activeSection: AgentDashboardSection;
   onBack: () => void;
   agentOpportunities: AgentOpportunity[];
+  arrivedOpportunityIds: string[];
   isAvailable: boolean;
   claimedOpportunityIds: string[];
   pickedUpOpportunityIds: string[];
@@ -21,6 +22,7 @@ type Props = {
   onToggleAvailability: () => void;
   onToggleOpportunityClaim: (opportunityId: string) => void;
   onMarkPickedUp: (opportunityId: string) => void;
+  onMarkArrived: (opportunityId: string) => void;
   onMarkDelivered: (opportunityId: string) => void;
   onWalletRefresh: () => void;
   onWalletWithdraw: (amountNaira: number) => void;
@@ -29,10 +31,12 @@ type Props = {
 export function AgentScreen({
   activeSection,
   agentOpportunities,
+  arrivedOpportunityIds,
   claimedOpportunityIds,
   deliveredOpportunityIds,
   isAvailable,
   onBack,
+  onMarkArrived,
   onMarkDelivered,
   onMarkPickedUp,
   onToggleAvailability,
@@ -148,10 +152,32 @@ export function AgentScreen({
           <Text style={styles.sectionTitle}>Delivery Queue</Text>
           {visibleOpportunities.length > 0 ? (
             visibleOpportunities.map((opportunity) => {
-              const isClaimed = claimedOpportunityIds.includes(opportunity.id);
-              const isPickedUp = pickedUpOpportunityIds.includes(opportunity.id);
-              const isDelivered = deliveredOpportunityIds.includes(opportunity.id);
-              const stage = isDelivered ? "Delivered" : isPickedUp ? "Picked Up" : isClaimed ? "Claimed" : "Open";
+              const isClaimed =
+                claimedOpportunityIds.includes(opportunity.id) ||
+                opportunity.stage === "Claimed" ||
+                opportunity.stage === "Picked Up" ||
+                opportunity.stage === "Arrived" ||
+                opportunity.stage === "Delivered";
+              const isPickedUp =
+                pickedUpOpportunityIds.includes(opportunity.id) ||
+                opportunity.stage === "Picked Up" ||
+                opportunity.stage === "Arrived" ||
+                opportunity.stage === "Delivered";
+              const hasArrived =
+                arrivedOpportunityIds.includes(opportunity.id) ||
+                opportunity.stage === "Arrived" ||
+                opportunity.stage === "Delivered";
+              const isDelivered =
+                deliveredOpportunityIds.includes(opportunity.id) || opportunity.stage === "Delivered";
+              const stage = isDelivered
+                ? "Delivered"
+                : hasArrived
+                  ? "Arrived"
+                  : isPickedUp
+                    ? "Picked Up"
+                    : isClaimed
+                      ? "Claimed"
+                      : "Open";
 
               return (
                 <View key={opportunity.id} style={styles.deliveryCard}>
@@ -189,9 +215,18 @@ export function AgentScreen({
                       <Text style={styles.secondaryActionText}>Pickup proof</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      disabled={!isPickedUp || isDelivered}
+                      disabled={!isPickedUp || hasArrived}
+                      onPress={() => onMarkArrived(opportunity.id)}
+                      style={[styles.secondaryAction, !isPickedUp || hasArrived ? styles.disabledAction : null]}
+                    >
+                      <Text style={styles.secondaryActionText}>Arrived</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.actionRow}>
+                    <TouchableOpacity
+                      disabled={!hasArrived || isDelivered}
                       onPress={() => onMarkDelivered(opportunity.id)}
-                      style={[styles.secondaryAction, !isPickedUp || isDelivered ? styles.disabledAction : null]}
+                      style={[styles.secondaryAction, !hasArrived || isDelivered ? styles.disabledAction : null]}
                     >
                       <Text style={styles.secondaryActionText}>Delivered</Text>
                     </TouchableOpacity>

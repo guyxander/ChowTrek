@@ -354,6 +354,10 @@ function getOngoingLabel(order: Order) {
     return "Delivery on the way";
   }
 
+  if (order.status === "Arrived") {
+    return "Delivery agent has arrived";
+  }
+
   if (order.status === "Ready") {
     return "Waiting for delivery pickup";
   }
