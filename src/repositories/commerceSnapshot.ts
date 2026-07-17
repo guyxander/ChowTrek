@@ -78,6 +78,21 @@ export async function loadCommerceSnapshot(): Promise<CommerceSnapshot> {
 
   try {
     const supabaseSnapshot = await loadSupabaseCommerceSnapshot();
+    const hasLiveCatalog =
+      (supabaseSnapshot.vendors?.length ?? 0) > 0 && (supabaseSnapshot.products?.length ?? 0) > 0;
+
+    if (!hasLiveCatalog) {
+      return {
+        ...mockSnapshot,
+        orders: supabaseSnapshot.orders ?? [],
+        agentOpportunities: supabaseSnapshot.agentOpportunities ?? [],
+        notificationPreferences:
+          supabaseSnapshot.notificationPreferences ?? mockSnapshot.notificationPreferences,
+        source: "supabase",
+        warning:
+          "Live ChowTrek account data is connected. Showing demo Food Ready catalog until approved Supabase merchants are visible."
+      };
+    }
 
     return {
       ...emptySnapshot,

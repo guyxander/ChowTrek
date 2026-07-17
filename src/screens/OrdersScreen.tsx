@@ -169,23 +169,25 @@ function CartTab({
           </TouchableOpacity>
         ))}
       </View>
-      {paymentMode === "Wallet" ? (
-        <View style={styles.walletSummary}>
-          <View style={styles.walletSummaryIcon}>
-            <Ionicons color={colors.deepGreen} name="wallet-outline" size={21} />
-          </View>
-          <View style={styles.walletSummaryCopy}>
-            <Text style={styles.walletSummaryLabel}>Wallet balance</Text>
-            <Text style={styles.walletSummaryValue}>{formatNaira(wallet.availableBalanceNaira)}</Text>
-          </View>
-          <TouchableOpacity onPress={onOpenWallet} style={styles.walletTopUpButton}>
-            <Text style={styles.walletTopUpText}>Top up</Text>
-          </TouchableOpacity>
-          <TouchableOpacity accessibilityLabel="Refresh wallet balance" onPress={onWalletRefresh} style={styles.walletRefresh}>
-            <Ionicons color={colors.deepGreen} name="refresh" size={18} />
-          </TouchableOpacity>
+      <View style={styles.walletSummary}>
+        <View style={styles.walletSummaryIcon}>
+          <Ionicons color={colors.deepGreen} name="wallet-outline" size={21} />
         </View>
-      ) : null}
+        <View style={styles.walletSummaryCopy}>
+          <Text style={styles.walletSummaryLabel}>Wallet balance</Text>
+          <Text style={styles.walletSummaryValue}>{formatNaira(wallet.availableBalanceNaira)}</Text>
+        </View>
+        <TouchableOpacity onPress={onOpenWallet} style={styles.walletTopUpButton}>
+          <Text style={styles.walletTopUpText}>Top up</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          accessibilityLabel="Refresh wallet balance"
+          onPress={onWalletRefresh}
+          style={styles.walletRefresh}
+        >
+          <Ionicons color={colors.deepGreen} name="refresh" size={18} />
+        </TouchableOpacity>
+      </View>
 
       {vendorCarts.length > 0 ? (
         vendorCarts.map((cart) => (
