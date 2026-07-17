@@ -112,7 +112,7 @@ $$;
 
 revoke all on function public.can_manage_wallet_role(text) from public;
 revoke execute on function public.can_manage_wallet_role(text) from anon;
-revoke execute on function public.can_manage_wallet_role(text) from authenticated;
+grant execute on function public.can_manage_wallet_role(text) to authenticated;
 
 drop policy if exists "users read own wallets" on public.wallets;
 create policy "users read own wallets"
