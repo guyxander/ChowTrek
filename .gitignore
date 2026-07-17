@@ -4,6 +4,7 @@ node_modules/
 dist/
 dist-test/
 credentials/
+google-services.json
 firebase-service-account*.json
 service-account*.json
 *-firebase-adminsdk-*.json

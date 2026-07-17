@@ -25,3 +25,17 @@ Configure Supabase values in `app.json` under `expo.extra`:
 
 Release APKs read these values from Expo config. The Supabase publishable/anon key is expected to
 ship in the client; never put a service-role key in app config.
+
+## Firebase Messaging
+
+Android push notifications require a local Firebase config file at:
+
+```text
+google-services.json
+```
+
+Copy `google-services.example.json` to `google-services.json`, then fill it with the Firebase
+Android app config for package `ng.chowtrek.app`. The real `google-services.json` is intentionally
+ignored by Git because GitHub flags the embedded Firebase Android API key. Firebase Admin or service
+account private-key JSON files must also stay out of Git and should be stored only as server-side
+secrets when notification sending is implemented.

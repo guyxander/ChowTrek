@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "207408677428",
-    "project_id": "chowtrek-f9030",
-    "storage_bucket": "chowtrek-f9030.firebasestorage.app"
+    "project_number": "YOUR_FIREBASE_PROJECT_NUMBER",
+    "project_id": "YOUR_FIREBASE_PROJECT_ID",
+    "storage_bucket": "YOUR_FIREBASE_STORAGE_BUCKET"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:207408677428:android:5f1771066f3f7c9b114061",
+        "mobilesdk_app_id": "YOUR_FIREBASE_ANDROID_APP_ID",
         "android_client_info": {
           "package_name": "ng.chowtrek.app"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDL8LiquwTuGC_RDlIkOl0PJvNhi9q_fAY"
+          "current_key": "YOUR_FIREBASE_ANDROID_API_KEY"
         }
       ],
       "services": {
