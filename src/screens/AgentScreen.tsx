@@ -143,6 +143,22 @@ export function AgentScreen({
               <Text style={styles.mapBadgeText}>Victoria Island: High</Text>
             </View>
           </View>
+          <View style={styles.routeCard}>
+            <View style={styles.routeIcon}>
+              <Ionicons color={colors.deepGreen} name="navigate" size={28} />
+            </View>
+            <View style={styles.routeContent}>
+              <Text style={styles.routeTitle}>Next Best Area</Text>
+              <Text style={styles.routeText}>
+                Head over to <Text style={styles.routeHighlight}>Ikoyi Hub</Text>. Expected wait time
+                for next order is less than 5 mins.
+              </Text>
+              <TouchableOpacity style={styles.routeButton}>
+                <Text style={styles.routeButtonText}>Route me there</Text>
+                <Ionicons color="#ffffff" name="arrow-forward" size={18} />
+              </TouchableOpacity>
+            </View>
+          </View>
           <View style={styles.verificationCard}>
             <View style={styles.verificationHeader}>
               <Ionicons color={colors.deepGreen} name="shield-checkmark-outline" size={20} />
@@ -169,23 +185,6 @@ export function AgentScreen({
               </Text>
             </TouchableOpacity>
             <Text style={styles.verificationMessage}>{verificationMessage}</Text>
-          </View>
-
-          <View style={styles.routeCard}>
-            <View style={styles.routeIcon}>
-              <Ionicons color={colors.deepGreen} name="navigate" size={28} />
-            </View>
-            <View style={styles.routeContent}>
-              <Text style={styles.routeTitle}>Next Best Area</Text>
-              <Text style={styles.routeText}>
-                Head over to <Text style={styles.routeHighlight}>Ikoyi Hub</Text>. Expected wait time
-                for next order is less than 5 mins.
-              </Text>
-              <TouchableOpacity style={styles.routeButton}>
-                <Text style={styles.routeButtonText}>Route me there</Text>
-                <Ionicons color="#ffffff" name="arrow-forward" size={18} />
-              </TouchableOpacity>
-            </View>
           </View>
         </>
       ) : null}
