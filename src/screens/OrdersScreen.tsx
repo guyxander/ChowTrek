@@ -70,15 +70,16 @@ export function OrdersScreen({
       const nextModes: Record<string, FulfilmentMode> = {};
 
       vendorCarts.forEach((cart) => {
+        const availableModes = getAvailableFulfilmentModes(cart.fulfilmentModes, paymentMode);
         const currentMode = currentModes[cart.id];
-        nextModes[cart.id] = cart.fulfilmentModes.includes(currentMode)
+        nextModes[cart.id] = availableModes.includes(currentMode)
           ? currentMode
-          : getDefaultFulfilmentMode(cart.fulfilmentModes);
+          : getDefaultFulfilmentMode(availableModes);
       });
 
       return nextModes;
     });
-  }, [vendorCarts]);
+  }, [paymentMode, vendorCarts]);
 
   return (
     <View style={styles.screen}>
@@ -235,9 +236,15 @@ function CartTab({
 
       {vendorCarts.length > 0 ? (
         vendorCarts.map((cart) => {
+          const availableFulfilmentModes = getAvailableFulfilmentModes(
+            cart.fulfilmentModes,
+            paymentMode
+          );
           const selectedMode =
-            selectedFulfilmentModes[cart.id] ?? getDefaultFulfilmentMode(cart.fulfilmentModes);
-          const fee = fulfilmentFees[selectedMode];
+            selectedFulfilmentModes[cart.id] ??
+            getDefaultFulfilmentMode(availableFulfilmentModes);
+          const hasAvailableFulfilment = availableFulfilmentModes.length > 0;
+          const fee = hasAvailableFulfilment ? fulfilmentFees[selectedMode] : 0;
           const total = cart.subtotal + fee;
           const isPlacingCart = pendingCheckoutCartId === cart.id;
 
@@ -279,7 +286,7 @@ function CartTab({
               <View style={styles.fulfilmentBlock}>
                 <Text style={styles.fulfilmentLabel}>Fulfilment</Text>
                 <View style={styles.fulfilmentOptions}>
-                  {cart.fulfilmentModes.map((mode) => {
+                  {availableFulfilmentModes.map((mode) => {
                     const isActive = selectedMode === mode;
 
                     return (
@@ -308,31 +315,48 @@ function CartTab({
                     );
                   })}
                 </View>
+                {!hasAvailableFulfilment ? (
+                  <Text style={styles.fulfilmentHelp}>
+                    Pickup is not available with Pay on Delivery. Choose Wallet or Flutterwave for
+                    pickup carts.
+                  </Text>
+                ) : null}
               </View>
               <View style={styles.deliveryLine}>
-                <View style={styles.deliveryMeta}>
-                  <Ionicons
-                    color={colors.deepGreen}
-                    name={getFulfilmentIcon(selectedMode)}
-                    size={18}
-                  />
-                  <Text style={styles.cardSubtle}>
-                    {selectedMode === "Pickup"
-                      ? "Pickup has no delivery fee"
-                      : `${selectedMode} fee: ${formatNaira(fee)}`}
-                  </Text>
-                </View>
+                {hasAvailableFulfilment ? (
+                  <View style={styles.deliveryMeta}>
+                    <Ionicons
+                      color={colors.deepGreen}
+                      name={getFulfilmentIcon(selectedMode)}
+                      size={18}
+                    />
+                    <Text style={styles.cardSubtle}>
+                      {selectedMode === "Pickup"
+                        ? "Pickup has no delivery fee"
+                        : `${selectedMode} fee: ${formatNaira(fee)}`}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={styles.cardSubtle}>No fulfilment option for this payment mode.</Text>
+                )}
               </View>
               <TouchableOpacity
-                disabled={isPlacingCart}
+                disabled={isPlacingCart || !hasAvailableFulfilment}
                 onPress={() => {
                   onCheckoutStarted(cart.id);
                   void Promise.resolve(onCheckout(cart.items, selectedMode)).finally(onCheckoutSettled);
                 }}
-                style={[styles.checkoutButton, isPlacingCart ? styles.checkoutButtonDisabled : null]}
+                style={[
+                  styles.checkoutButton,
+                  isPlacingCart || !hasAvailableFulfilment ? styles.checkoutButtonDisabled : null
+                ]}
               >
                 <Text style={styles.checkoutButtonText}>
-                  {isPlacingCart ? "Placing cart..." : "Place this cart"}
+                  {isPlacingCart
+                    ? "Placing cart..."
+                    : hasAvailableFulfilment
+                      ? "Place this cart"
+                      : "Choose another payment mode"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -450,6 +474,17 @@ function groupCartItems(items: CartItem[]): VendorCart[] {
 
 function getDefaultFulfilmentMode(modes: FulfilmentMode[]) {
   return modes.includes("Trek Delivery") ? "Trek Delivery" : modes[0] ?? "Pickup";
+}
+
+function getAvailableFulfilmentModes(
+  modes: FulfilmentMode[],
+  paymentMode: PaymentMode
+): FulfilmentMode[] {
+  if (paymentMode === "Pay on Delivery") {
+    return modes.filter((mode) => mode !== "Pickup");
+  }
+
+  return modes;
 }
 
 function getFulfilmentIcon(mode: FulfilmentMode): keyof typeof Ionicons.glyphMap {
@@ -618,6 +653,12 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     gap: 8,
     paddingTop: 12
+  },
+  fulfilmentHelp: {
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 18
   },
   fulfilmentLabel: {
     color: colors.muted,

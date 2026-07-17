@@ -465,7 +465,11 @@ export default function App() {
       const result = await createCheckoutOrder(selectedItems, paymentMode, fulfilmentMode);
 
       setDataNotice(result.message);
-      Alert.alert(result.ok ? "Cart placed" : "Cart not placed", result.message);
+      if (result.ok) {
+        Alert.alert("Cart placed", result.message);
+      } else {
+        showCheckoutFailure(result.message);
+      }
 
       if (result.ok) {
         const checkedOutItemIds = new Set(selectedItems.map((item) => item.id));
@@ -483,8 +487,20 @@ export default function App() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Checkout failed before placing the cart.";
       setDataNotice(message);
-      Alert.alert("Cart not placed", message);
+      showCheckoutFailure(message);
     }
+  }
+
+  function showCheckoutFailure(message: string) {
+    if (message.includes("Save your phone number")) {
+      Alert.alert("Cart not placed", message, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Save number", onPress: () => navigateTo("profile", "edit") }
+      ]);
+      return;
+    }
+
+    Alert.alert("Cart not placed", message);
   }
 
   async function addMerchantProduct(name: string, priceNaira: number, imageUrl?: string) {
