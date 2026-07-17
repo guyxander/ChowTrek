@@ -74,7 +74,28 @@ export type CartItem = {
   unitPriceNaira: number;
 };
 
-export type PaymentMode = "Flutterwave" | "Pay on Delivery";
+export type PaymentMode = "Flutterwave" | "Pay on Delivery" | "Wallet";
+export type WalletRole = "customer" | "merchant" | "agent" | "admin";
+
+export type WalletLedgerEntry = {
+  id: string;
+  label: string;
+  amountNaira: number;
+  direction: "credit" | "debit";
+  status: "Pending" | "Available" | "Paid" | "Failed";
+  createdAt: string;
+};
+
+export type WalletSummary = {
+  role: WalletRole;
+  availableBalanceNaira: number;
+  pendingBalanceNaira: number;
+  totalEarnedNaira: number;
+  virtualAccount?: string;
+  savedBank?: string;
+  message: string;
+  ledger: WalletLedgerEntry[];
+};
 
 export type MerchantMetric = {
   label: string;

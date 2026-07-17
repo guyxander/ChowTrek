@@ -5,11 +5,12 @@ import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "reac
 
 import { SectionHeader } from "../components/SectionHeader";
 import { StatusBadge } from "../components/StatusBadge";
+import { WalletPanel } from "../components/WalletPanel";
 import { commerceRepository } from "../repositories/commerceRepository";
 import { uploadMerchantProductImage } from "../repositories/merchantProductRepository";
 import { colors } from "../theme/colors";
 import { sharedStyles } from "../theme/sharedStyles";
-import { Order, OrderStatus, Product } from "../types/domain";
+import { Order, OrderStatus, Product, WalletSummary } from "../types/domain";
 import { formatNaira } from "../utils/money";
 
 declare const require: (moduleName: "expo-image-picker") => typeof ExpoImagePicker;
@@ -18,10 +19,13 @@ type Props = {
   onBack: () => void;
   orders: Order[];
   products: Product[];
+  wallet: WalletSummary;
   onCreateProduct: (name: string, priceNaira: number, imageUrl?: string) => void;
   onCycleProductStatus: (productId: string) => void;
   onSaveStorefront: (storeName: string, storeArea: string) => void;
   onUpdateOrderStatus: (orderId: string | undefined, status: OrderStatus) => void;
+  onWalletRefresh: () => void;
+  onWalletWithdraw: (amountNaira: number) => void;
 };
 
 export function MerchantScreen({
@@ -30,8 +34,11 @@ export function MerchantScreen({
   onCycleProductStatus,
   onSaveStorefront,
   onUpdateOrderStatus,
+  onWalletRefresh,
+  onWalletWithdraw,
   orders,
-  products
+  products,
+  wallet
 }: Props) {
   const [productName, setProductName] = useState("");
   const [productPrice, setProductPrice] = useState("");
@@ -96,6 +103,12 @@ export function MerchantScreen({
           Storefront, product media, availability, order queue, handover, and analytics.
         </Text>
       </View>
+      <WalletPanel
+        onRefresh={onWalletRefresh}
+        onWithdraw={onWalletWithdraw}
+        title="Store earnings"
+        wallet={wallet}
+      />
       <View style={styles.metricGrid}>
         {metrics.map((metric) => (
           <View key={metric.label} style={styles.metricCard}>

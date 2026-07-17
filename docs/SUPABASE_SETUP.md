@@ -71,6 +71,7 @@ Connected project discovered through the Supabase app:
    - `docs/supabase_product_media_storage_patch.sql`
    - `docs/supabase_delivery_stage_patch.sql`
    - `docs/supabase_production_hardening_patch.sql`
+   - `docs/supabase_wallet_patch.sql`
 
    They allow signed-in users to activate their own merchant/agent records, create customer
    checkout orders, upload product media, sync push tokens, and let merchant/admin accounts manage
@@ -106,6 +107,7 @@ After Google sign-in, these app actions attempt to sync with Supabase:
 - Change merchant product availability through `products.status`.
 - Save merchant storefront profile details through `merchant_profiles`.
 - Create checkout `orders`, `order_items`, `deliveries`, and `transactions`.
+- Create and read role wallets, wallet ledger entries, and withdrawal requests.
 - Sync push tokens through `device_push_tokens`.
 - Toggle delivery agent availability through `delivery_agent_profiles.is_available`.
 - Claim/release delivery opportunities through `deliveries.agent_id`.

@@ -2,16 +2,20 @@ import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+import { WalletPanel } from "../components/WalletPanel";
 import { approveAdminQueueItem, loadAdminDashboard } from "../repositories/adminRepository";
 import { colors } from "../theme/colors";
 import { sharedStyles } from "../theme/sharedStyles";
-import { AdminMetric, AdminQueueItem } from "../types/domain";
+import { AdminMetric, AdminQueueItem, WalletSummary } from "../types/domain";
 
 type Props = {
   onBack: () => void;
+  wallet: WalletSummary;
+  onWalletRefresh: () => void;
+  onWalletWithdraw: (amountNaira: number) => void;
 };
 
-export function AdminScreen({ onBack }: Props) {
+export function AdminScreen({ onBack, onWalletRefresh, onWalletWithdraw, wallet }: Props) {
   const [metrics, setMetrics] = useState<AdminMetric[]>([]);
   const [queue, setQueue] = useState<AdminQueueItem[]>([]);
   const [message, setMessage] = useState("Loading admin queues...");
@@ -74,6 +78,12 @@ export function AdminScreen({ onBack }: Props) {
           Master dashboard, merchant onboarding, agent logistics, disputes, and audit controls.
         </Text>
       </View>
+      <WalletPanel
+        onRefresh={onWalletRefresh}
+        onWithdraw={onWalletWithdraw}
+        title="Platform gains"
+        wallet={wallet}
+      />
       <Text style={styles.adminNotice}>{message}</Text>
       <View style={styles.metricGrid}>
         {metrics.map((metric) => (

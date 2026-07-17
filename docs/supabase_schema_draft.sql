@@ -17,7 +17,7 @@ create type public.order_status as enum (
   'cancelled'
 );
 create type public.fulfilment_mode as enum ('pickup', 'trek_delivery', 'express');
-create type public.payment_mode as enum ('flutterwave', 'pay_on_delivery');
+create type public.payment_mode as enum ('flutterwave', 'pay_on_delivery', 'wallet');
 create type public.timeline_event_type as enum (
   'food_ready',
   'new_product',
@@ -193,7 +193,62 @@ create table public.transactions (
   provider text not null,
   provider_reference text,
   amount_naira integer not null check (amount_naira >= 0),
+  platform_fee_naira integer not null default 0 check (platform_fee_naira >= 0),
+  merchant_settlement_naira integer not null default 0 check (merchant_settlement_naira >= 0),
+  agent_payout_naira integer not null default 0 check (agent_payout_naira >= 0),
   status text not null,
+  created_at timestamptz not null default now()
+);
+
+create table public.wallets (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  role text not null check (role in ('customer', 'merchant', 'agent', 'admin')),
+  currency text not null default 'NGN' check (currency = 'NGN'),
+  available_balance_naira integer not null default 0 check (available_balance_naira >= 0),
+  pending_balance_naira integer not null default 0 check (pending_balance_naira >= 0),
+  total_earned_naira integer not null default 0 check (total_earned_naira >= 0),
+  virtual_account_provider text,
+  virtual_account_number text,
+  saved_bank_name text,
+  saved_bank_last4 text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, role)
+);
+
+create table public.wallet_ledger_entries (
+  id uuid primary key default gen_random_uuid(),
+  wallet_id uuid not null references public.wallets(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  order_id uuid references public.orders(id) on delete set null,
+  direction text not null check (direction in ('credit', 'debit')),
+  entry_type text not null check (
+    entry_type in (
+      'top_up',
+      'order_payment',
+      'merchant_earning',
+      'delivery_payout',
+      'platform_fee',
+      'withdrawal'
+    )
+  ),
+  amount_naira integer not null check (amount_naira > 0),
+  status text not null default 'pending' check (status in ('pending', 'available', 'paid', 'failed')),
+  note text,
+  created_at timestamptz not null default now()
+);
+
+create table public.wallet_withdrawal_requests (
+  id uuid primary key default gen_random_uuid(),
+  wallet_id uuid not null references public.wallets(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  amount_naira integer not null check (amount_naira > 0),
+  status text not null default 'pending' check (status in ('pending', 'approved', 'paid', 'rejected')),
+  bank_name text,
+  account_last4 text,
+  reviewed_by uuid references public.profiles(id),
+  reviewed_at timestamptz,
   created_at timestamptz not null default now()
 );
 
@@ -238,6 +293,53 @@ $$;
 
 revoke all on function private.handle_new_user() from public, anon, authenticated;
 
+create or replace function public.can_manage_wallet_role(target_role text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select case target_role
+    when 'customer' then auth.uid() is not null
+    when 'merchant' then exists (
+      select 1
+      from public.profile_roles role_record
+      where role_record.profile_id = auth.uid()
+        and role_record.role = 'merchant'
+        and role_record.is_approved
+    ) or exists (
+      select 1
+      from public.merchant_profiles merchant
+      where merchant.owner_id = auth.uid()
+        and merchant.is_approved
+    )
+    when 'agent' then exists (
+      select 1
+      from public.profile_roles role_record
+      where role_record.profile_id = auth.uid()
+        and role_record.role = 'delivery_agent'
+        and role_record.is_approved
+    ) or exists (
+      select 1
+      from public.delivery_agent_profiles agent
+      where agent.user_id = auth.uid()
+        and agent.is_verified
+    )
+    when 'admin' then exists (
+      select 1
+      from public.profile_roles role_record
+      where role_record.profile_id = auth.uid()
+        and role_record.role = 'admin'
+        and role_record.is_approved
+    ) or coalesce(auth.jwt() -> 'app_metadata' -> 'roles', '[]'::jsonb) ? 'admin'
+    else false
+  end;
+$$;
+
+revoke all on function public.can_manage_wallet_role(text) from public;
+grant execute on function public.can_manage_wallet_role(text) to authenticated;
+
 drop trigger if exists on_auth_user_created on auth.users;
 
 create trigger on_auth_user_created
@@ -262,6 +364,9 @@ alter table public.ratings enable row level security;
 alter table public.notifications enable row level security;
 alter table public.notification_preferences enable row level security;
 alter table public.transactions enable row level security;
+alter table public.wallets enable row level security;
+alter table public.wallet_ledger_entries enable row level security;
+alter table public.wallet_withdrawal_requests enable row level security;
 alter table public.app_settings enable row level security;
 
 create policy "profiles are readable by owner"
@@ -546,6 +651,69 @@ using (
         or merchant.owner_id = (select auth.uid())
       )
   )
+);
+
+create policy "users read own wallets"
+on public.wallets for select
+to authenticated
+using (
+  user_id = (select auth.uid())
+  and public.can_manage_wallet_role(role)
+);
+
+create policy "users create own wallets"
+on public.wallets for insert
+to authenticated
+with check (
+  user_id = (select auth.uid())
+  and public.can_manage_wallet_role(role)
+);
+
+create policy "users read own wallet ledger"
+on public.wallet_ledger_entries for select
+to authenticated
+using (
+  user_id = (select auth.uid())
+  and exists (
+    select 1
+    from public.wallets wallet
+    where wallet.id = wallet_ledger_entries.wallet_id
+      and public.can_manage_wallet_role(wallet.role)
+  )
+);
+
+create policy "users read own withdrawals"
+on public.wallet_withdrawal_requests for select
+to authenticated
+using (
+  user_id = (select auth.uid())
+  and exists (
+    select 1
+    from public.wallets wallet
+    where wallet.id = wallet_withdrawal_requests.wallet_id
+      and public.can_manage_wallet_role(wallet.role)
+  )
+);
+
+create policy "users request own withdrawals"
+on public.wallet_withdrawal_requests for insert
+to authenticated
+with check (
+  user_id = (select auth.uid())
+  and exists (
+    select 1
+    from public.wallets wallet
+    where wallet.id = wallet_withdrawal_requests.wallet_id
+      and public.can_manage_wallet_role(wallet.role)
+  )
+);
+
+create policy "admins read withdrawal requests"
+on public.wallet_withdrawal_requests for select
+to authenticated
+using (
+  user_id = (select auth.uid())
+  or coalesce((select auth.jwt() -> 'app_metadata' -> 'roles'), '[]'::jsonb) ? 'admin'
 );
 
 create policy "authenticated users read app settings"

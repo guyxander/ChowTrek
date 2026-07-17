@@ -21,6 +21,9 @@ This is the implementation map for the Supabase schema. It is not a migration ye
 - `notifications`: per-user notification events.
 - `notification_preferences`: per-user notification category toggles.
 - `transactions`: Flutterwave or Pay on Delivery transaction records.
+- `wallets`: NGN role wallets for customers, merchants, agents, and admins/platform gain tracking.
+- `wallet_ledger_entries`: immutable wallet credits/debits for top-ups, wallet checkout, merchant earnings, delivery payouts, platform fees, and withdrawals.
+- `wallet_withdrawal_requests`: role wallet cash-out requests reviewed by admins before settlement.
 - `app_settings`: server-driven app version/update controls.
 
 ## RLS Direction

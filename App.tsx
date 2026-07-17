@@ -19,6 +19,7 @@ import {
   updateMerchantStorefront
 } from "./src/repositories/merchantProductRepository";
 import { updateMerchantOrderStatus } from "./src/repositories/orderStatusRepository";
+import { loadWalletSummary, requestWalletWithdrawal } from "./src/repositories/walletRepository";
 import {
   syncAgentAvailability,
   syncDeliveryClaim,
@@ -40,8 +41,17 @@ import {
   Product,
   TabKey,
   TimelineEvent,
-  Vendor
+  Vendor,
+  WalletRole,
+  WalletSummary
 } from "./src/types/domain";
+
+const initialWallets: Record<WalletRole, WalletSummary> = {
+  customer: createInitialWallet("customer"),
+  merchant: createInitialWallet("merchant"),
+  agent: createInitialWallet("agent"),
+  admin: createInitialWallet("admin")
+};
 
 export default function App() {
   const initialSnapshot = getInitialCommerceSnapshot();
@@ -63,6 +73,7 @@ export default function App() {
   );
   const [dataNotice, setDataNotice] = useState(initialSnapshot.warning ?? "Loading ChowTrek data...");
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("Flutterwave");
+  const [wallets, setWallets] = useState<Record<WalletRole, WalletSummary>>(initialWallets);
   const [isAgentAvailable, setIsAgentAvailable] = useState(true);
   const [claimedOpportunityIds, setClaimedOpportunityIds] = useState<string[]>([]);
   const [pickedUpOpportunityIds, setPickedUpOpportunityIds] = useState<string[]>([]);
@@ -110,6 +121,7 @@ export default function App() {
     };
 
     applySnapshot();
+    refreshWallets();
     const unsubscribe = subscribeToCommerceChanges(refreshFromRealtime, (message) => {
       if (isMounted) {
         setDataNotice(message);
@@ -124,6 +136,30 @@ export default function App() {
       unsubscribe();
     };
   }, []);
+
+  async function refreshWallets() {
+    const [customer, merchant, agent, admin] = await Promise.all([
+      loadWalletSummary("customer"),
+      loadWalletSummary("merchant"),
+      loadWalletSummary("agent"),
+      loadWalletSummary("admin")
+    ]);
+
+    setWallets({ customer, merchant, agent, admin });
+  }
+
+  async function withdrawFromWallet(role: WalletRole, amountNaira: number) {
+    const result = await requestWalletWithdrawal(role, amountNaira);
+    setDataNotice(result.message);
+
+    if (result.ok) {
+      await refreshWallets();
+    }
+  }
+
+  function openWalletTopUpNotice() {
+    setDataNotice("Wallet top-up needs a funding provider before live deposits can be collected.");
+  }
 
   async function toggleVendorFollow(vendorId: string) {
     const vendor = vendors.find((currentVendor) => currentVendor.id === vendorId);
@@ -221,6 +257,7 @@ export default function App() {
       const snapshot = await loadCommerceSnapshot();
       setOrders(snapshot.orders);
       setAgentOpportunities(snapshot.agentOpportunities);
+      await refreshWallets();
     }
   }
 
@@ -373,6 +410,9 @@ export default function App() {
               orders={orders}
               paymentMode={paymentMode}
               onPaymentModeChange={setPaymentMode}
+              onWalletAddMoney={openWalletTopUpNotice}
+              onWalletRefresh={refreshWallets}
+              wallet={wallets.customer}
             />
           </View>
         ) : (
@@ -398,8 +438,11 @@ export default function App() {
                 onCycleProductStatus={cycleProductStatus}
                 onSaveStorefront={saveMerchantStorefront}
                 onUpdateOrderStatus={changeMerchantOrderStatus}
+                onWalletRefresh={refreshWallets}
+                onWalletWithdraw={(amountNaira) => withdrawFromWallet("merchant", amountNaira)}
                 orders={orders}
                 products={merchantProducts}
+                wallet={wallets.merchant}
               />
             ) : null}
             {activeTab === "agent" ? (
@@ -414,9 +457,19 @@ export default function App() {
                 onMarkPickedUp={markOpportunityPickedUp}
                 onToggleAvailability={toggleAgentAvailability}
                 onToggleOpportunityClaim={toggleOpportunityClaim}
+                onWalletRefresh={refreshWallets}
+                onWalletWithdraw={(amountNaira) => withdrawFromWallet("agent", amountNaira)}
+                wallet={wallets.agent}
               />
             ) : null}
-            {activeTab === "admin" ? <AdminScreen onBack={() => setActiveTab("profile")} /> : null}
+            {activeTab === "admin" ? (
+              <AdminScreen
+                onBack={() => setActiveTab("profile")}
+                onWalletRefresh={refreshWallets}
+                onWalletWithdraw={(amountNaira) => withdrawFromWallet("admin", amountNaira)}
+                wallet={wallets.admin}
+              />
+            ) : null}
           </ScrollView>
         )}
         {!isRoleDashboard ? <BottomNav activeTab={activeTab} onChange={setActiveTab} /> : null}
@@ -490,3 +543,16 @@ const styles = StyleSheet.create({
     right: 0
   }
 });
+
+function createInitialWallet(role: WalletRole): WalletSummary {
+  return {
+    role,
+    availableBalanceNaira: 0,
+    pendingBalanceNaira: 0,
+    totalEarnedNaira: 0,
+    virtualAccount: "Wallet loading",
+    savedBank: "No withdrawal bank saved",
+    message: "Loading wallet...",
+    ledger: []
+  };
+}

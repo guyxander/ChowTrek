@@ -61,7 +61,39 @@ export async function createCheckoutOrder(
   const totalNaira = subtotalNaira + deliveryFeeNaira;
   const merchantId = cartItems[0].vendorId!;
   const paymentReference = `CHOW-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-  const paymentStatus = paymentMode === "Flutterwave" ? "pending" : "pay_on_delivery";
+  const normalizedPaymentMode =
+    paymentMode === "Flutterwave"
+      ? "flutterwave"
+      : paymentMode === "Wallet"
+        ? "wallet"
+        : "pay_on_delivery";
+  const paymentStatus =
+    paymentMode === "Flutterwave" ? "pending" : paymentMode === "Wallet" ? "pending" : "pay_on_delivery";
+
+  if (paymentMode === "Wallet") {
+    const walletResult = await supabase
+      .from("wallets")
+      .select("available_balance_naira")
+      .eq("user_id", user.id)
+      .eq("role", "customer")
+      .maybeSingle();
+
+    if (walletResult.error) {
+      return {
+        ok: false,
+        message: `Wallet checkout needs the Supabase wallet patch: ${walletResult.error.message}`
+      };
+    }
+
+    const balance = Number(walletResult.data?.available_balance_naira ?? 0);
+
+    if (balance < totalNaira) {
+      return {
+        ok: false,
+        message: `Wallet balance is ${formatInlineNaira(balance)}. Add money or choose another payment method.`
+      };
+    }
+  }
 
   const orderResult = await supabase
     .from("orders")
@@ -70,7 +102,7 @@ export async function createCheckoutOrder(
       merchant_id: merchantId,
       status: "placed",
       fulfilment_mode: "trek_delivery",
-      payment_mode: paymentMode === "Flutterwave" ? "flutterwave" : "pay_on_delivery",
+      payment_mode: normalizedPaymentMode,
       payment_reference: paymentReference,
       payment_status: paymentStatus,
       subtotal_naira: subtotalNaira,
@@ -110,7 +142,7 @@ export async function createCheckoutOrder(
 
   const transactionResult = await supabase.from("transactions").insert({
     order_id: orderId,
-    provider: paymentMode === "Flutterwave" ? "flutterwave" : "pay_on_delivery",
+    provider: normalizedPaymentMode,
     provider_reference: paymentReference,
     amount_naira: totalNaira,
     status: paymentStatus
@@ -118,6 +150,19 @@ export async function createCheckoutOrder(
 
   if (transactionResult.error) {
     return { ok: false, message: `Payment record failed: ${transactionResult.error.message}` };
+  }
+
+  if (paymentMode === "Wallet") {
+    const walletDebitResult = await supabase.rpc("pay_order_with_wallet", {
+      target_order_id: orderId
+    });
+
+    if (walletDebitResult.error) {
+      return {
+        ok: false,
+        message: `Wallet debit failed: ${walletDebitResult.error.message}. Your cart was not cleared.`
+      };
+    }
   }
 
   const paymentUrl =
@@ -132,10 +177,16 @@ export async function createCheckoutOrder(
         ? paymentUrl
           ? `Order #${orderId.slice(0, 8).toUpperCase()} placed. Complete Flutterwave payment with reference ${paymentReference}.`
           : `Order #${orderId.slice(0, 8).toUpperCase()} placed as pending. Configure Flutterwave payment URL to collect online payment.`
-        : `Order #${orderId.slice(0, 8).toUpperCase()} placed for pay on delivery.`,
+        : paymentMode === "Wallet"
+          ? `Order #${orderId.slice(0, 8).toUpperCase()} paid from ChowTrek Wallet.`
+          : `Order #${orderId.slice(0, 8).toUpperCase()} placed for pay on delivery.`,
     orderId,
     paymentUrl
   };
+}
+
+function formatInlineNaira(amountNaira: number): string {
+  return `₦${amountNaira.toLocaleString("en-NG")}`;
 }
 
 function buildFlutterwaveUrl(reference: string, amountNaira: number): string {

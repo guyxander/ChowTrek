@@ -4,8 +4,9 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 import { BrandLogo } from "../components/BrandLogo";
 import { OrderCard } from "../components/OrderCard";
+import { WalletPanel } from "../components/WalletPanel";
 import { colors } from "../theme/colors";
-import { CartItem, Order, PaymentMode } from "../types/domain";
+import { CartItem, Order, PaymentMode, WalletSummary } from "../types/domain";
 import { formatNaira } from "../utils/money";
 
 type OrderTab = "cart" | "ongoing" | "completed";
@@ -15,9 +16,12 @@ type Props = {
   dataNotice: string;
   orders: Order[];
   paymentMode: PaymentMode;
+  wallet: WalletSummary;
   onCartQuantityChange: (itemId: string, delta: number) => void;
   onCheckout: (items?: CartItem[]) => void;
   onPaymentModeChange: (mode: PaymentMode) => void;
+  onWalletAddMoney: () => void;
+  onWalletRefresh: () => void;
 };
 
 type VendorCart = {
@@ -39,8 +43,11 @@ export function OrdersScreen({
   onCartQuantityChange,
   onCheckout,
   onPaymentModeChange,
+  onWalletAddMoney,
+  onWalletRefresh,
   orders,
-  paymentMode
+  paymentMode,
+  wallet
 }: Props) {
   const [activeTab, setActiveTab] = useState<OrderTab>("cart");
   const vendorCarts = useMemo(() => groupCartItems(cartItems), [cartItems]);
@@ -110,7 +117,10 @@ export function OrdersScreen({
             onCartQuantityChange={onCartQuantityChange}
             onCheckout={onCheckout}
             onPaymentModeChange={onPaymentModeChange}
+            onWalletAddMoney={onWalletAddMoney}
+            onWalletRefresh={onWalletRefresh}
             paymentMode={paymentMode}
+            wallet={wallet}
             vendorCarts={vendorCarts}
           />
         ) : null}
@@ -125,19 +135,25 @@ function CartTab({
   onCartQuantityChange,
   onCheckout,
   onPaymentModeChange,
+  onWalletAddMoney,
+  onWalletRefresh,
   paymentMode,
+  wallet,
   vendorCarts
 }: {
   vendorCarts: VendorCart[];
   paymentMode: PaymentMode;
+  wallet: WalletSummary;
   onCartQuantityChange: (itemId: string, delta: number) => void;
   onCheckout: (items?: CartItem[]) => void;
   onPaymentModeChange: (mode: PaymentMode) => void;
+  onWalletAddMoney: () => void;
+  onWalletRefresh: () => void;
 }) {
   return (
     <View>
       <View style={styles.paymentToggle}>
-        {(["Flutterwave", "Pay on Delivery"] as PaymentMode[]).map((mode) => (
+        {(["Wallet", "Flutterwave", "Pay on Delivery"] as PaymentMode[]).map((mode) => (
           <TouchableOpacity
             key={mode}
             onPress={() => onPaymentModeChange(mode)}
@@ -154,6 +170,15 @@ function CartTab({
           </TouchableOpacity>
         ))}
       </View>
+      {paymentMode === "Wallet" ? (
+        <WalletPanel
+          compact
+          onAddMoney={onWalletAddMoney}
+          onRefresh={onWalletRefresh}
+          title="Checkout Wallet"
+          wallet={wallet}
+        />
+      ) : null}
 
       {vendorCarts.length > 0 ? (
         vendorCarts.map((cart) => (

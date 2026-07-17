@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+import { WalletPanel } from "../components/WalletPanel";
 import { colors } from "../theme/colors";
-import { AgentOpportunity } from "../types/domain";
+import { AgentOpportunity, WalletSummary } from "../types/domain";
 import { formatNaira } from "../utils/money";
 
 const agentAvatar =
@@ -15,10 +16,13 @@ type Props = {
   claimedOpportunityIds: string[];
   pickedUpOpportunityIds: string[];
   deliveredOpportunityIds: string[];
+  wallet: WalletSummary;
   onToggleAvailability: () => void;
   onToggleOpportunityClaim: (opportunityId: string) => void;
   onMarkPickedUp: (opportunityId: string) => void;
   onMarkDelivered: (opportunityId: string) => void;
+  onWalletRefresh: () => void;
+  onWalletWithdraw: (amountNaira: number) => void;
 };
 
 export function AgentScreen({
@@ -31,7 +35,10 @@ export function AgentScreen({
   onMarkPickedUp,
   onToggleAvailability,
   onToggleOpportunityClaim,
-  pickedUpOpportunityIds
+  onWalletRefresh,
+  onWalletWithdraw,
+  pickedUpOpportunityIds,
+  wallet
 }: Props) {
   const claimedCount = claimedOpportunityIds.length;
   const completedCount = deliveredOpportunityIds.length;
@@ -68,6 +75,12 @@ export function AgentScreen({
           <Text style={styles.trendText}>12% more than yesterday</Text>
         </View>
       </View>
+      <WalletPanel
+        onRefresh={onWalletRefresh}
+        onWithdraw={onWalletWithdraw}
+        title="Delivery payouts"
+        wallet={wallet}
+      />
 
       <View style={styles.sectionHeader}>
         <View>

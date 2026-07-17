@@ -17,7 +17,8 @@ This file supersedes the original Flutter-only implementation guardrail.
 - Discovery comes first; delivery is a convenience feature.
 - Bottom navigation is fixed: Home, Discover, Community, Orders, Profile.
 - Authentication uses Google OAuth for MVP to avoid SMS costs.
-- No customer wallet in MVP.
+- Wallet is optional at checkout. Customers can pay from ChowTrek Wallet after the wallet schema patch is applied.
+- Merchant, delivery, and admin dashboards include role wallets for accrued ChowTrek balances and withdrawal requests.
 - No loyalty system, gamification, Firebase, Stripe, Paystack, or undefined social features.
 - Flutterwave remains the payment provider for online payments.
 - Supabase service-role keys must never be shipped in the mobile client.
