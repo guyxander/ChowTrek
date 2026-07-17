@@ -116,33 +116,6 @@ export function AgentScreen({
               <Text style={styles.trendText}>12% more than yesterday</Text>
             </View>
           </View>
-          <View style={styles.verificationCard}>
-            <View style={styles.verificationHeader}>
-              <Ionicons color={colors.deepGreen} name="shield-checkmark-outline" size={20} />
-              <Text style={styles.verificationTitle}>Delivery verification</Text>
-            </View>
-            <Text style={styles.verificationCopy}>
-              Save your private home address here. It is visible only to ChowTrek admins for delivery agent review.
-            </Text>
-            <TextInput
-              multiline
-              onChangeText={setVerificationAddress}
-              placeholder="House number, street, city"
-              placeholderTextColor={colors.muted}
-              style={styles.verificationInput}
-              value={verificationAddress}
-            />
-            <TouchableOpacity
-              disabled={isSavingVerification}
-              onPress={handleSaveVerificationAddress}
-              style={[styles.verificationButton, isSavingVerification ? styles.disabledAction : null]}
-            >
-              <Text style={styles.verificationButtonText}>
-                {isSavingVerification ? "Saving..." : "Save delivery verification"}
-              </Text>
-            </TouchableOpacity>
-            <Text style={styles.verificationMessage}>{verificationMessage}</Text>
-          </View>
           <View style={styles.sectionHeader}>
             <View>
               <Text style={styles.sectionTitle}>Hot Zones</Text>
@@ -169,6 +142,33 @@ export function AgentScreen({
               <View style={styles.orangeDot} />
               <Text style={styles.mapBadgeText}>Victoria Island: High</Text>
             </View>
+          </View>
+          <View style={styles.verificationCard}>
+            <View style={styles.verificationHeader}>
+              <Ionicons color={colors.deepGreen} name="shield-checkmark-outline" size={20} />
+              <Text style={styles.verificationTitle}>Delivery verification</Text>
+            </View>
+            <Text style={styles.verificationCopy}>
+              Save your private home address here. It is visible only to ChowTrek admins for delivery agent review.
+            </Text>
+            <TextInput
+              multiline
+              onChangeText={setVerificationAddress}
+              placeholder="House number, street, city"
+              placeholderTextColor={colors.muted}
+              style={styles.verificationInput}
+              value={verificationAddress}
+            />
+            <TouchableOpacity
+              disabled={isSavingVerification}
+              onPress={handleSaveVerificationAddress}
+              style={[styles.verificationButton, isSavingVerification ? styles.disabledAction : null]}
+            >
+              <Text style={styles.verificationButtonText}>
+                {isSavingVerification ? "Saving..." : "Save delivery verification"}
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.verificationMessage}>{verificationMessage}</Text>
           </View>
 
           <View style={styles.routeCard}>
