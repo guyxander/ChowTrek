@@ -97,22 +97,31 @@ export function DiscoverScreen({
 
   return (
     <View style={styles.screen}>
-      <View style={styles.fixedHeader}>
-        <Text style={sharedStyles.screenTitle}>Discover</Text>
-        <Text style={sharedStyles.bodyCopy}>
-          Food ready, new products, special offers, and followed vendor updates.
-        </Text>
-        <Text style={styles.dataNotice}>{dataNotice}</Text>
-        <TextInput
-          onChangeText={(value) => {
-            setQuery(value);
-            setSelectedVendorId(null);
-          }}
-          placeholder="Search vendors, food, or offers"
-          placeholderTextColor={colors.muted}
-          style={styles.searchInput}
-          value={query}
-        />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[1]}
+      >
+        <View>
+          <Text style={sharedStyles.screenTitle}>Discover</Text>
+          <Text style={sharedStyles.bodyCopy}>
+            Food ready, new products, special offers, and followed vendor updates.
+          </Text>
+          <Text style={styles.dataNotice}>{dataNotice}</Text>
+        </View>
+        <View style={styles.stickySearchWrap}>
+          <TextInput
+            onChangeText={(value) => {
+              setQuery(value);
+              setSelectedVendorId(null);
+            }}
+            placeholder="Search vendors, food, or offers"
+            placeholderTextColor={colors.muted}
+            style={styles.searchInput}
+            value={query}
+          />
+        </View>
         <View style={styles.filterRow}>
           {filters.map((label) => (
             <TouchableOpacity
@@ -134,13 +143,6 @@ export function DiscoverScreen({
             </TouchableOpacity>
           ))}
         </View>
-      </View>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        style={styles.discoverScroll}
-      >
         {filteredVendors.length > 0 ? (
           filteredVendors.map((vendor) => (
             <VendorCard
@@ -174,12 +176,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginTop: 10
   },
-  discoverScroll: {
-    flex: 1
-  },
-  fixedHeader: {
-    flexShrink: 0
-  },
   filterChip: {
     backgroundColor: colors.successSoft,
     borderRadius: 999,
@@ -202,7 +198,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginVertical: 18
+    marginBottom: 18,
+    marginTop: 10
   },
   screen: {
     flex: 1
@@ -215,9 +212,15 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     color: colors.text,
     fontSize: 14,
-    marginTop: 16,
     paddingHorizontal: 14,
     paddingVertical: 13
+  },
+  stickySearchWrap: {
+    backgroundColor: colors.surface,
+    elevation: 4,
+    paddingBottom: 8,
+    paddingTop: 10,
+    zIndex: 10
   },
   timelineHeader: {
     marginBottom: 12,

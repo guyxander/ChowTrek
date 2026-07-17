@@ -126,90 +126,99 @@ export function HomeScreen({
 
   return (
     <View style={styles.screen}>
-      <View style={styles.fixedHeader}>
-        <View style={styles.headerRow}>
-          <View style={styles.brandLockup}>
-            <BrandLogo size={46} />
-            <View>
-              <Text style={styles.brand}>ChowTrek</Text>
-              <Text style={sharedStyles.subtle}>{selectedAddress.area}</Text>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[1]}
+      >
+        <View>
+          <View style={styles.headerRow}>
+            <View style={styles.brandLockup}>
+              <BrandLogo size={46} />
+              <View>
+                <Text style={styles.brand}>ChowTrek</Text>
+                <Text style={sharedStyles.subtle}>{selectedAddress.area}</Text>
+              </View>
             </View>
-          </View>
-          <TouchableOpacity
-            accessibilityLabel="Show notifications"
-            onPress={() => onShowNotice("Notifications can be managed from your profile.")}
-            style={styles.notificationButton}
-          >
-            <Ionicons color={colors.deepGreen} name="notifications-outline" size={26} />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.addressCard}>
-          <TouchableOpacity
-            onPress={onOpenAddresses}
-            style={styles.addressMain}
-          >
-            <Ionicons color={colors.deepGreen} name="location" size={19} />
-            <View style={styles.addressCopy}>
-              <Text style={styles.addressLabel}>Delivering to {selectedAddress.label}</Text>
-              <Text numberOfLines={1} style={styles.addressDetail}>
-                {selectedAddress.detail}
-              </Text>
-            </View>
-            <Ionicons color={colors.muted} name="chevron-down" size={18} />
-          </TouchableOpacity>
-          <ScrollView
-            contentContainerStyle={styles.addressChips}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          >
-            {addresses.map((address) => {
-              const active = selectedAddressId === address.id;
-
-              return (
-                <TouchableOpacity
-                  key={address.id}
-                  onPress={() => {
-                    setSelectedAddressId(address.id);
-                    setSelectedVendorId(null);
-                    onShowNotice(`Showing Food Ready merchants near ${address.detail}.`);
-                  }}
-                  style={[styles.addressChip, active ? styles.addressChipActive : null]}
-                >
-                  <Text style={[styles.addressChipText, active ? styles.addressChipTextActive : null]}>
-                    {address.label}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
             <TouchableOpacity
-              onPress={async () => {
-                const newAddress = await onCreateAddress();
-
-                if (newAddress) {
-                  setSelectedAddressId(newAddress.id);
-                  setSelectedVendorId(null);
-                }
-              }}
-              style={styles.addAddressChip}
+              accessibilityLabel="Show notifications"
+              onPress={() => onShowNotice("Notifications can be managed from your profile.")}
+              style={styles.notificationButton}
             >
-              <Ionicons color={colors.deepGreen} name="add" size={15} />
-              <Text style={styles.addAddressText}>Add address</Text>
+              <Ionicons color={colors.deepGreen} name="notifications-outline" size={26} />
             </TouchableOpacity>
-          </ScrollView>
+          </View>
+          <View style={styles.addressCard}>
+            <TouchableOpacity
+              onPress={onOpenAddresses}
+              style={styles.addressMain}
+            >
+              <Ionicons color={colors.deepGreen} name="location" size={19} />
+              <View style={styles.addressCopy}>
+                <Text style={styles.addressLabel}>Delivering to {selectedAddress.label}</Text>
+                <Text numberOfLines={1} style={styles.addressDetail}>
+                  {selectedAddress.detail}
+                </Text>
+              </View>
+              <Ionicons color={colors.muted} name="chevron-down" size={18} />
+            </TouchableOpacity>
+            <ScrollView
+              contentContainerStyle={styles.addressChips}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            >
+              {addresses.map((address) => {
+                const active = selectedAddressId === address.id;
+
+                return (
+                  <TouchableOpacity
+                    key={address.id}
+                    onPress={() => {
+                      setSelectedAddressId(address.id);
+                      setSelectedVendorId(null);
+                      onShowNotice(`Showing Food Ready merchants near ${address.detail}.`);
+                    }}
+                    style={[styles.addressChip, active ? styles.addressChipActive : null]}
+                  >
+                    <Text style={[styles.addressChipText, active ? styles.addressChipTextActive : null]}>
+                      {address.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+              <TouchableOpacity
+                onPress={async () => {
+                  const newAddress = await onCreateAddress();
+
+                  if (newAddress) {
+                    setSelectedAddressId(newAddress.id);
+                    setSelectedVendorId(null);
+                  }
+                }}
+                style={styles.addAddressChip}
+              >
+                <Ionicons color={colors.deepGreen} name="add" size={15} />
+                <Text style={styles.addAddressText}>Add address</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+          <Text style={styles.dataNotice}>{dataNotice}</Text>
         </View>
-        <Text style={styles.dataNotice}>{dataNotice}</Text>
-        <View style={styles.searchBox}>
-          <Ionicons color={colors.muted} name="search" size={20} />
-          <TextInput
-            onChangeText={(value) => {
-              setQuery(value);
-              setSelectedVendorId(null);
-            }}
-            placeholder="Search food, shops, or vendors nearby"
-            placeholderTextColor={colors.muted}
-            style={styles.searchInput}
-            value={query}
-          />
+        <View style={styles.stickySearchWrap}>
+          <View style={styles.searchBox}>
+            <Ionicons color={colors.muted} name="search" size={20} />
+            <TextInput
+              onChangeText={(value) => {
+                setQuery(value);
+                setSelectedVendorId(null);
+              }}
+              placeholder="Search food, shops, or vendors nearby"
+              placeholderTextColor={colors.muted}
+              style={styles.searchInput}
+              value={query}
+            />
+          </View>
         </View>
         <View style={styles.modeRow}>
           {[
@@ -229,13 +238,6 @@ export function HomeScreen({
             </TouchableOpacity>
           ))}
         </View>
-      </View>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        style={styles.vendorScroll}
-      >
         <SectionHeader action="See all" onAction={resetFilters} title="Hidden Gems Nearby" />
         {filteredVendors.length > 0 ? (
           filteredVendors.map((vendor) => (
@@ -346,13 +348,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 12
   },
-  fixedHeader: {
-    flexShrink: 0
-  },
   modeRow: {
     flexDirection: "row",
     gap: 8,
-    marginBottom: 22
+    marginBottom: 22,
+    marginTop: 4
   },
   notificationButton: {
     alignItems: "center",
@@ -381,7 +381,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingVertical: 13
   },
-  vendorScroll: {
-    flex: 1
+  stickySearchWrap: {
+    backgroundColor: colors.surface,
+    elevation: 4,
+    paddingBottom: 8,
+    paddingTop: 2,
+    zIndex: 10
   }
 });
