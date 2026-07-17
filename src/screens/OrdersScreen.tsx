@@ -17,7 +17,7 @@ type Props = {
   paymentMode: PaymentMode;
   wallet: WalletSummary;
   onCartQuantityChange: (itemId: string, delta: number) => void;
-  onCheckout: (items?: CartItem[], fulfilmentMode?: FulfilmentMode) => void;
+  onCheckout: (items?: CartItem[], fulfilmentMode?: FulfilmentMode) => Promise<void> | void;
   onOpenWallet: () => void;
   onPaymentModeChange: (mode: PaymentMode) => void;
   onWalletRefresh: () => void;
@@ -60,6 +60,7 @@ export function OrdersScreen({
   const [selectedFulfilmentModes, setSelectedFulfilmentModes] = useState<
     Record<string, FulfilmentMode>
   >({});
+  const [pendingCheckoutCartId, setPendingCheckoutCartId] = useState<string | null>(null);
   const vendorCarts = useMemo(() => groupCartItems(cartItems), [cartItems]);
   const ongoingOrders = orders.filter((order) => !["Delivered", "Cancelled"].includes(order.status));
   const completedOrders = orders.filter((order) => ["Delivered", "Cancelled"].includes(order.status));
@@ -147,10 +148,13 @@ export function OrdersScreen({
               setSelectedFulfilmentModes((currentModes) => ({ ...currentModes, [cartId]: mode }))
             }
             onWalletRefresh={onWalletRefresh}
+            pendingCheckoutCartId={pendingCheckoutCartId}
             paymentMode={paymentMode}
             selectedFulfilmentModes={selectedFulfilmentModes}
             wallet={wallet}
             vendorCarts={vendorCarts}
+            onCheckoutSettled={() => setPendingCheckoutCartId(null)}
+            onCheckoutStarted={(cartId) => setPendingCheckoutCartId(cartId)}
           />
         ) : null}
         {activeTab === "ongoing" ? <OngoingTab orders={ongoingOrders} /> : null}
@@ -166,18 +170,24 @@ function CartTab({
   onOpenWallet,
   onPaymentModeChange,
   onSelectFulfilmentMode,
+  onCheckoutSettled,
+  onCheckoutStarted,
   onWalletRefresh,
   paymentMode,
+  pendingCheckoutCartId,
   selectedFulfilmentModes,
   wallet,
   vendorCarts
 }: {
   vendorCarts: VendorCart[];
   paymentMode: PaymentMode;
+  pendingCheckoutCartId: string | null;
   selectedFulfilmentModes: Record<string, FulfilmentMode>;
   wallet: WalletSummary;
   onCartQuantityChange: (itemId: string, delta: number) => void;
-  onCheckout: (items?: CartItem[], fulfilmentMode?: FulfilmentMode) => void;
+  onCheckout: (items?: CartItem[], fulfilmentMode?: FulfilmentMode) => Promise<void> | void;
+  onCheckoutSettled: () => void;
+  onCheckoutStarted: (cartId: string) => void;
   onOpenWallet: () => void;
   onPaymentModeChange: (mode: PaymentMode) => void;
   onSelectFulfilmentMode: (cartId: string, mode: FulfilmentMode) => void;
@@ -229,6 +239,7 @@ function CartTab({
             selectedFulfilmentModes[cart.id] ?? getDefaultFulfilmentMode(cart.fulfilmentModes);
           const fee = fulfilmentFees[selectedMode];
           const total = cart.subtotal + fee;
+          const isPlacingCart = pendingCheckoutCartId === cart.id;
 
           return (
             <View key={cart.id} style={styles.cartCard}>
@@ -313,10 +324,16 @@ function CartTab({
                 </View>
               </View>
               <TouchableOpacity
-                onPress={() => onCheckout(cart.items, selectedMode)}
-                style={styles.checkoutButton}
+                disabled={isPlacingCart}
+                onPress={() => {
+                  onCheckoutStarted(cart.id);
+                  void Promise.resolve(onCheckout(cart.items, selectedMode)).finally(onCheckoutSettled);
+                }}
+                style={[styles.checkoutButton, isPlacingCart ? styles.checkoutButtonDisabled : null]}
               >
-                <Text style={styles.checkoutButtonText}>Place this cart</Text>
+                <Text style={styles.checkoutButtonText}>
+                  {isPlacingCart ? "Placing cart..." : "Place this cart"}
+                </Text>
               </TouchableOpacity>
             </View>
           );
@@ -525,6 +542,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 12,
     paddingVertical: 13
+  },
+  checkoutButtonDisabled: {
+    opacity: 0.72
   },
   checkoutButtonText: {
     color: "#ffffff",

@@ -71,7 +71,18 @@ async function saveDevicePushToken(
     return { ok: false, message: "Sign in with Google before syncing push notifications." };
   }
 
-  const deviceToken = await Notifications.getDevicePushTokenAsync();
+  let deviceToken: ExpoNotifications.DevicePushToken;
+
+  try {
+    deviceToken = await Notifications.getDevicePushTokenAsync();
+  } catch (error) {
+    return {
+      ok: false,
+      message:
+        "Android push permission is available, but Firebase Cloud Messaging credentials are not configured for this APK yet."
+    };
+  }
+
   const result = await supabase.from("device_push_tokens").upsert(
     {
       user_id: user.id,

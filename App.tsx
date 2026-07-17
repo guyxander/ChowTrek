@@ -1,6 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import {
+  Alert,
   BackHandler,
   Linking,
   SafeAreaView,
@@ -89,6 +90,17 @@ const initialWallets: Record<WalletRole, WalletSummary> = {
   admin: createInitialWallet("admin")
 };
 
+const defaultNotificationPreferences: NotificationPreference[] = [
+  { id: "order-status", label: "Order status updates", enabled: true },
+  { id: "delivery-arrival", label: "Delivery arrival alerts", enabled: true },
+  { id: "merchant-accepted", label: "Merchant accepted orders", enabled: true },
+  { id: "food-ready", label: "Food Ready nearby", enabled: true },
+  { id: "wallet-activity", label: "Wallet activity", enabled: true },
+  { id: "special-offers", label: "Deals and special offers", enabled: true },
+  { id: "community", label: "Community updates", enabled: false },
+  { id: "admin-announcements", label: "ChowTrek announcements", enabled: true }
+];
+
 type ProfilePanel =
   | "profile"
   | "wallet"
@@ -126,7 +138,7 @@ export default function App() {
     initialSnapshot.agentOpportunities
   );
   const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreference[]>(
-    initialSnapshot.notificationPreferences
+    mergeNotificationPreferences(initialSnapshot.notificationPreferences)
   );
   const [dataNotice, setDataNotice] = useState(initialSnapshot.warning ?? "Loading ChowTrek data...");
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("Flutterwave");
@@ -153,7 +165,7 @@ export default function App() {
         setMerchantProducts(snapshot.products);
         setOrders(snapshot.orders);
         setTimelineEvents(snapshot.timelineEvents);
-        setNotificationPreferences(snapshot.notificationPreferences);
+        setNotificationPreferences(mergeNotificationPreferences(snapshot.notificationPreferences));
         setAgentOpportunities(snapshot.agentOpportunities);
         setDataNotice(
           snapshot.warning ??
@@ -349,8 +361,15 @@ export default function App() {
   }
 
   async function requestPushAlerts() {
-    const result = await requestPushNotificationPermission();
-    setDataNotice(result.message);
+    try {
+      const result = await requestPushNotificationPermission();
+      setDataNotice(result.message);
+      Alert.alert(result.ok ? "Push alerts enabled" : "Push alerts not enabled", result.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Push notification setup failed.";
+      setDataNotice(message);
+      Alert.alert("Push alerts not enabled", message);
+    }
   }
 
   async function toggleVendorFollow(vendorId: string) {
@@ -374,9 +393,9 @@ export default function App() {
   }
 
   async function toggleNotificationPreference(preferenceId: string) {
-    const nextPreference = notificationPreferences.find(
-      (preference) => preference.id === preferenceId
-    );
+    const nextPreference =
+      notificationPreferences.find((preference) => preference.id === preferenceId) ??
+      defaultNotificationPreferences.find((preference) => preference.id === preferenceId);
 
     if (!nextPreference) {
       return;
@@ -389,14 +408,16 @@ export default function App() {
 
     setNotificationPreferences((currentPreferences) =>
       currentPreferences.map((preference) =>
-        preference.id === preferenceId
-          ? { ...preference, enabled: !preference.enabled }
-          : preference
+        preference.id === preferenceId ? updatedPreference : preference
       )
     );
 
     const result = await syncNotificationPreference(updatedPreference);
     setDataNotice(result.message);
+    Alert.alert(
+      updatedPreference.enabled ? "Notification enabled" : "Notification disabled",
+      result.message
+    );
   }
 
   function changeCartQuantity(itemId: string, delta: number) {
@@ -440,20 +461,29 @@ export default function App() {
     selectedItems = cartItems,
     fulfilmentMode: FulfilmentMode = "Trek Delivery"
   ) {
-    const result = await createCheckoutOrder(selectedItems, paymentMode, fulfilmentMode);
+    try {
+      const result = await createCheckoutOrder(selectedItems, paymentMode, fulfilmentMode);
 
-    setDataNotice(result.message);
+      setDataNotice(result.message);
+      Alert.alert(result.ok ? "Cart placed" : "Cart not placed", result.message);
 
-    if (result.ok) {
-      const checkedOutItemIds = new Set(selectedItems.map((item) => item.id));
-      setCartItems((currentItems) => currentItems.filter((item) => !checkedOutItemIds.has(item.id)));
-      if (result.paymentUrl) {
-        await Linking.openURL(result.paymentUrl);
+      if (result.ok) {
+        const checkedOutItemIds = new Set(selectedItems.map((item) => item.id));
+        setCartItems((currentItems) =>
+          currentItems.filter((item) => !checkedOutItemIds.has(item.id))
+        );
+        if (result.paymentUrl) {
+          await Linking.openURL(result.paymentUrl);
+        }
+        const snapshot = await loadCommerceSnapshot();
+        setOrders(snapshot.orders);
+        setAgentOpportunities(snapshot.agentOpportunities);
+        await refreshWallets();
       }
-      const snapshot = await loadCommerceSnapshot();
-      setOrders(snapshot.orders);
-      setAgentOpportunities(snapshot.agentOpportunities);
-      await refreshWallets();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Checkout failed before placing the cart.";
+      setDataNotice(message);
+      Alert.alert("Cart not placed", message);
     }
   }
 
@@ -916,6 +946,19 @@ function createInitialWallet(role: WalletRole): WalletSummary {
     message: "Loading wallet...",
     ledger: []
   };
+}
+
+function mergeNotificationPreferences(
+  preferences: NotificationPreference[]
+): NotificationPreference[] {
+  const savedPreferences = new Map(
+    preferences.map((preference) => [preference.id, preference])
+  );
+
+  return defaultNotificationPreferences.map((defaultPreference) => ({
+    ...defaultPreference,
+    ...savedPreferences.get(defaultPreference.id)
+  }));
 }
 
 function buildFlutterwaveUrl(reference: string, amountNaira: number, purpose: string): string {

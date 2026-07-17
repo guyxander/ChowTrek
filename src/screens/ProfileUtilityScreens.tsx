@@ -79,6 +79,9 @@ export function NotificationSettingsScreen({
         <Ionicons color="#ffffff" name="notifications" size={20} />
         <Text style={styles.primaryButtonText}>Enable push alerts</Text>
       </TouchableOpacity>
+      <Text style={styles.helperText}>
+        Choose what ChowTrek can notify you about after Android push permission is enabled.
+      </Text>
       {notificationPreferences.map((preference) => (
         <TouchableOpacity
           key={preference.id}
@@ -90,7 +93,9 @@ export function NotificationSettingsScreen({
           </View>
           <View style={styles.rowCopy}>
             <Text style={styles.rowTitle}>{preference.label}</Text>
-            <Text style={styles.rowMeta}>{preference.enabled ? "Enabled" : "Disabled"}</Text>
+            <Text style={styles.rowMeta}>
+              {getNotificationDescription(preference.id)} - {preference.enabled ? "Enabled" : "Disabled"}
+            </Text>
           </View>
           <Text style={[styles.statePill, preference.enabled ? styles.statePillActive : null]}>
             {preference.enabled ? "On" : "Off"}
@@ -99,6 +104,21 @@ export function NotificationSettingsScreen({
       ))}
     </View>
   );
+}
+
+function getNotificationDescription(preferenceId: string): string {
+  const descriptions: Record<string, string> = {
+    "admin-announcements": "Important platform notices",
+    community: "Replies, follows, and local updates",
+    "delivery-arrival": "Agent arrival and delivery handoff",
+    "food-ready": "Fresh food ready near your address",
+    "merchant-accepted": "Merchant accepts or prepares your cart",
+    "order-status": "Placed, ready, transit, and completed carts",
+    "special-offers": "Vendor deals and limited drops",
+    "wallet-activity": "Top-ups, payouts, and withdrawals"
+  };
+
+  return descriptions[preferenceId] ?? "Notification category";
 }
 
 export function SettingsScreen({ onBack }: { onBack: () => void }) {
@@ -196,6 +216,13 @@ const styles = StyleSheet.create({
     height: 42,
     justifyContent: "center",
     width: 42
+  },
+  helperText: {
+    color: colors.muted,
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 19,
+    marginBottom: 12
   },
   primaryButton: {
     alignItems: "center",
