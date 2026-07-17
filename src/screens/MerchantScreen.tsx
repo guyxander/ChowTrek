@@ -10,12 +10,19 @@ import { commerceRepository } from "../repositories/commerceRepository";
 import { uploadMerchantProductImage } from "../repositories/merchantProductRepository";
 import { colors } from "../theme/colors";
 import { sharedStyles } from "../theme/sharedStyles";
-import { Order, OrderStatus, Product, WalletSummary } from "../types/domain";
+import {
+  MerchantDashboardSection,
+  Order,
+  OrderStatus,
+  Product,
+  WalletSummary
+} from "../types/domain";
 import { formatNaira } from "../utils/money";
 
 declare const require: (moduleName: "expo-image-picker") => typeof ExpoImagePicker;
 
 type Props = {
+  activeSection: MerchantDashboardSection;
   onBack: () => void;
   orders: Order[];
   products: Product[];
@@ -29,6 +36,7 @@ type Props = {
 };
 
 export function MerchantScreen({
+  activeSection,
   onBack,
   onCreateProduct,
   onCycleProductStatus,
@@ -103,158 +111,170 @@ export function MerchantScreen({
           Storefront, product media, availability, order queue, handover, and analytics.
         </Text>
       </View>
-      <WalletPanel
-        onRefresh={onWalletRefresh}
-        onWithdraw={onWalletWithdraw}
-        title="Store earnings"
-        wallet={wallet}
-      />
-      <View style={styles.metricGrid}>
-        {metrics.map((metric) => (
-          <View key={metric.label} style={styles.metricCard}>
-            <Text style={styles.metricValue}>{metric.value}</Text>
-            <Text style={sharedStyles.subtle}>{metric.label}</Text>
-          </View>
-        ))}
-      </View>
-      <View style={sharedStyles.card}>
-        <Text style={sharedStyles.cardTitle}>Storefront profile</Text>
-        <TextInput
-          onChangeText={setStoreName}
-          placeholder="Store name"
-          placeholderTextColor={colors.muted}
-          style={styles.input}
-          value={storeName}
-        />
-        <TextInput
-          onChangeText={setStoreArea}
-          placeholder="Neighborhood"
-          placeholderTextColor={colors.muted}
-          style={styles.input}
-          value={storeArea}
-        />
-        <View style={styles.profilePreview}>
-          <Ionicons color={colors.deepGreen} name="storefront-outline" size={20} />
-          <Text style={styles.profilePreviewText}>
-            {storeName || "Storefront"} - {storeArea || "Neighborhood"}
-          </Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => onSaveStorefront(storeName, storeArea)}
-          style={styles.statusButton}
-        >
-          <Text style={styles.statusButtonText}>Save storefront profile</Text>
-        </TouchableOpacity>
-      </View>
-      <View style={sharedStyles.card}>
-        <Text style={sharedStyles.cardTitle}>Add product</Text>
-        <TextInput
-          onChangeText={setProductName}
-          placeholder="Product name"
-          placeholderTextColor={colors.muted}
-          style={styles.input}
-          value={productName}
-        />
-        <TextInput
-          keyboardType="number-pad"
-          onChangeText={setProductPrice}
-          placeholder="Price in NGN"
-          placeholderTextColor={colors.muted}
-          style={styles.input}
-          value={productPrice}
-        />
-        <TextInput
-          autoCapitalize="none"
-          onChangeText={setProductImageUrl}
-          placeholder="Image URL"
-          placeholderTextColor={colors.muted}
-          style={styles.input}
-          value={productImageUrl}
-        />
-        <TouchableOpacity onPress={pickAndUploadImage} style={styles.uploadButton}>
-          <Ionicons color={colors.deepGreen} name="image-outline" size={18} />
-          <Text style={styles.uploadButtonText}>Pick and upload image</Text>
-        </TouchableOpacity>
-        {uploadMessage ? <Text style={styles.imageMeta}>{uploadMessage}</Text> : null}
-        <TouchableOpacity
-          onPress={() => {
-            onCreateProduct(productName, priceNaira, productImageUrl);
-            setProductName("");
-            setProductPrice("");
-            setProductImageUrl("");
-          }}
-          style={styles.statusButton}
-        >
-          <Text style={styles.statusButtonText}>Add to storefront</Text>
-        </TouchableOpacity>
-      </View>
-      <SectionHeader title="Product availability" />
-      {products.length > 0 ? (
-        products.map((product) => (
-          <View key={product.id} style={sharedStyles.card}>
-            <View style={styles.row}>
-              {product.imageUrl ? (
-                <Image source={{ uri: product.imageUrl }} style={styles.productImage} />
-              ) : null}
-              <View style={styles.productInfo}>
-                <Text style={sharedStyles.cardTitle}>{product.name}</Text>
-                <Text style={sharedStyles.bodyCopy}>{formatNaira(product.priceNaira)}</Text>
-                <Text style={styles.imageMeta}>
-                  {product.imageUrl ? "Image attached" : "No product image yet"}
-                </Text>
+      {activeSection === "home" ? (
+        <>
+          <WalletPanel
+            onRefresh={onWalletRefresh}
+            onWithdraw={onWalletWithdraw}
+            title="Store earnings"
+            wallet={wallet}
+          />
+          <View style={styles.metricGrid}>
+            {metrics.map((metric) => (
+              <View key={metric.label} style={styles.metricCard}>
+                <Text style={styles.metricValue}>{metric.value}</Text>
+                <Text style={sharedStyles.subtle}>{metric.label}</Text>
               </View>
-              <StatusBadge status={product.status} />
+            ))}
+          </View>
+          <View style={sharedStyles.card}>
+            <View style={sharedStyles.inlineMeta}>
+              <Ionicons color={colors.orange} name="megaphone-outline" size={20} />
+              <Text style={sharedStyles.metaText}>Create Food Ready, New Product, or Community post</Text>
+            </View>
+          </View>
+        </>
+      ) : null}
+      {activeSection === "products" ? (
+        <>
+          <View style={sharedStyles.card}>
+            <Text style={sharedStyles.cardTitle}>Storefront profile</Text>
+            <TextInput
+              onChangeText={setStoreName}
+              placeholder="Store name"
+              placeholderTextColor={colors.muted}
+              style={styles.input}
+              value={storeName}
+            />
+            <TextInput
+              onChangeText={setStoreArea}
+              placeholder="Neighborhood"
+              placeholderTextColor={colors.muted}
+              style={styles.input}
+              value={storeArea}
+            />
+            <View style={styles.profilePreview}>
+              <Ionicons color={colors.deepGreen} name="storefront-outline" size={20} />
+              <Text style={styles.profilePreviewText}>
+                {storeName || "Storefront"} - {storeArea || "Neighborhood"}
+              </Text>
             </View>
             <TouchableOpacity
-              onPress={() => onCycleProductStatus(product.id)}
+              onPress={() => onSaveStorefront(storeName, storeArea)}
               style={styles.statusButton}
             >
-              <Text style={styles.statusButtonText}>Change status</Text>
+              <Text style={styles.statusButtonText}>Save storefront profile</Text>
             </TouchableOpacity>
           </View>
-        ))
-      ) : (
-        <View style={sharedStyles.card}>
-          <Text style={sharedStyles.cardTitle}>No products yet</Text>
-          <Text style={sharedStyles.bodyCopy}>Add your first product with a price and image URL.</Text>
-        </View>
-      )}
-      <SectionHeader title="Order queue" />
-      {orders.length > 0 ? (
-        orders.map((order) => (
-          <View key={order.id} style={sharedStyles.card}>
-          <View style={styles.row}>
-            <View>
-              <Text style={sharedStyles.cardTitle}>Order #{order.id}</Text>
-              <Text style={sharedStyles.bodyCopy}>{order.summary}</Text>
+          <View style={sharedStyles.card}>
+            <Text style={sharedStyles.cardTitle}>Add product</Text>
+            <TextInput
+              onChangeText={setProductName}
+              placeholder="Product name"
+              placeholderTextColor={colors.muted}
+              style={styles.input}
+              value={productName}
+            />
+            <TextInput
+              keyboardType="number-pad"
+              onChangeText={setProductPrice}
+              placeholder="Price in NGN"
+              placeholderTextColor={colors.muted}
+              style={styles.input}
+              value={productPrice}
+            />
+            <TextInput
+              autoCapitalize="none"
+              onChangeText={setProductImageUrl}
+              placeholder="Image URL"
+              placeholderTextColor={colors.muted}
+              style={styles.input}
+              value={productImageUrl}
+            />
+            <TouchableOpacity onPress={pickAndUploadImage} style={styles.uploadButton}>
+              <Ionicons color={colors.deepGreen} name="image-outline" size={18} />
+              <Text style={styles.uploadButtonText}>Pick and upload image</Text>
+            </TouchableOpacity>
+            {uploadMessage ? <Text style={styles.imageMeta}>{uploadMessage}</Text> : null}
+            <TouchableOpacity
+              onPress={() => {
+                onCreateProduct(productName, priceNaira, productImageUrl);
+                setProductName("");
+                setProductPrice("");
+                setProductImageUrl("");
+              }}
+              style={styles.statusButton}
+            >
+              <Text style={styles.statusButtonText}>Add to storefront</Text>
+            </TouchableOpacity>
+          </View>
+          <SectionHeader title="Product availability" />
+          {products.length > 0 ? (
+            products.map((product) => (
+              <View key={product.id} style={sharedStyles.card}>
+                <View style={styles.row}>
+                  {product.imageUrl ? (
+                    <Image source={{ uri: product.imageUrl }} style={styles.productImage} />
+                  ) : null}
+                  <View style={styles.productInfo}>
+                    <Text style={sharedStyles.cardTitle}>{product.name}</Text>
+                    <Text style={sharedStyles.bodyCopy}>{formatNaira(product.priceNaira)}</Text>
+                    <Text style={styles.imageMeta}>
+                      {product.imageUrl ? "Image attached" : "No product image yet"}
+                    </Text>
+                  </View>
+                  <StatusBadge status={product.status} />
+                </View>
+                <TouchableOpacity
+                  onPress={() => onCycleProductStatus(product.id)}
+                  style={styles.statusButton}
+                >
+                  <Text style={styles.statusButtonText}>Change status</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          ) : (
+            <View style={sharedStyles.card}>
+              <Text style={sharedStyles.cardTitle}>No products yet</Text>
+              <Text style={sharedStyles.bodyCopy}>Add your first product with a price and image URL.</Text>
             </View>
-            <Text style={styles.queueStatus}>{order.status}</Text>
-          </View>
-          <View style={styles.actionRow}>
-            <TouchableOpacity onPress={() => onUpdateOrderStatus(order.recordId, "Preparing")}>
-              <Text style={styles.queueAction}>Accept</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => onUpdateOrderStatus(order.recordId, "Ready")}>
-              <Text style={styles.queueAction}>Mark ready</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => onUpdateOrderStatus(order.recordId, "In Transit")}>
-              <Text style={styles.queueAction}>Handover</Text>
-            </TouchableOpacity>
-          </View>
-          </View>
-        ))
-      ) : (
-        <View style={sharedStyles.card}>
-          <Text style={sharedStyles.cardTitle}>No open orders</Text>
-          <Text style={sharedStyles.bodyCopy}>New paid or pay-on-delivery orders will appear here.</Text>
-        </View>
-      )}
-      <View style={sharedStyles.card}>
-        <View style={sharedStyles.inlineMeta}>
-          <Ionicons color={colors.orange} name="megaphone-outline" size={20} />
-          <Text style={sharedStyles.metaText}>Create Food Ready, New Product, or Community post</Text>
-        </View>
-      </View>
+          )}
+        </>
+      ) : null}
+      {activeSection === "orders" ? (
+        <>
+          <SectionHeader title="Order queue" />
+          {orders.length > 0 ? (
+            orders.map((order) => (
+              <View key={order.id} style={sharedStyles.card}>
+                <View style={styles.row}>
+                  <View>
+                    <Text style={sharedStyles.cardTitle}>Order #{order.id}</Text>
+                    <Text style={sharedStyles.bodyCopy}>{order.summary}</Text>
+                  </View>
+                  <Text style={styles.queueStatus}>{order.status}</Text>
+                </View>
+                <View style={styles.actionRow}>
+                  <TouchableOpacity onPress={() => onUpdateOrderStatus(order.recordId, "Preparing")}>
+                    <Text style={styles.queueAction}>Accept</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => onUpdateOrderStatus(order.recordId, "Ready")}>
+                    <Text style={styles.queueAction}>Mark ready</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => onUpdateOrderStatus(order.recordId, "In Transit")}>
+                    <Text style={styles.queueAction}>Handover</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
+          ) : (
+            <View style={sharedStyles.card}>
+              <Text style={sharedStyles.cardTitle}>No open orders</Text>
+              <Text style={sharedStyles.bodyCopy}>New paid or pay-on-delivery orders will appear here.</Text>
+            </View>
+          )}
+        </>
+      ) : null}
     </View>
   );
 }

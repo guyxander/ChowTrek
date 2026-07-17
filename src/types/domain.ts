@@ -84,6 +84,9 @@ export type CartItem = {
 
 export type PaymentMode = "Flutterwave" | "Pay on Delivery" | "Wallet";
 export type WalletRole = "customer" | "merchant" | "agent" | "admin";
+export type MerchantDashboardSection = "home" | "orders" | "products";
+export type AgentDashboardSection = "home" | "orders" | "earnings";
+export type AdminDashboardSection = "home" | "queue" | "audit";
 
 export type WalletLedgerEntry = {
   id: string;

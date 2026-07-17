@@ -6,16 +6,23 @@ import { WalletPanel } from "../components/WalletPanel";
 import { approveAdminQueueItem, loadAdminDashboard } from "../repositories/adminRepository";
 import { colors } from "../theme/colors";
 import { sharedStyles } from "../theme/sharedStyles";
-import { AdminMetric, AdminQueueItem, WalletSummary } from "../types/domain";
+import { AdminDashboardSection, AdminMetric, AdminQueueItem, WalletSummary } from "../types/domain";
 
 type Props = {
+  activeSection: AdminDashboardSection;
   onBack: () => void;
   wallet: WalletSummary;
   onWalletRefresh: () => void;
   onWalletWithdraw: (amountNaira: number) => void;
 };
 
-export function AdminScreen({ onBack, onWalletRefresh, onWalletWithdraw, wallet }: Props) {
+export function AdminScreen({
+  activeSection,
+  onBack,
+  onWalletRefresh,
+  onWalletWithdraw,
+  wallet
+}: Props) {
   const [metrics, setMetrics] = useState<AdminMetric[]>([]);
   const [queue, setQueue] = useState<AdminQueueItem[]>([]);
   const [message, setMessage] = useState("Loading admin queues...");
@@ -78,64 +85,75 @@ export function AdminScreen({ onBack, onWalletRefresh, onWalletWithdraw, wallet 
           Master dashboard, merchant onboarding, agent logistics, disputes, and audit controls.
         </Text>
       </View>
-      <WalletPanel
-        onRefresh={onWalletRefresh}
-        onWithdraw={onWalletWithdraw}
-        title="Platform gains"
-        wallet={wallet}
-      />
-      <Text style={styles.adminNotice}>{message}</Text>
-      <View style={styles.metricGrid}>
-        {metrics.map((metric) => (
-          <View key={metric.label} style={styles.metricCard}>
-            <Text style={styles.metricValue}>{metric.value}</Text>
-            <Text style={sharedStyles.cardTitle}>{metric.label}</Text>
-            <Text style={sharedStyles.subtle}>{metric.detail}</Text>
+      {activeSection === "home" ? (
+        <>
+          <WalletPanel
+            onRefresh={onWalletRefresh}
+            onWithdraw={onWalletWithdraw}
+            title="Platform gains"
+            wallet={wallet}
+          />
+          <Text style={styles.adminNotice}>{message}</Text>
+          <View style={styles.metricGrid}>
+            {metrics.map((metric) => (
+              <View key={metric.label} style={styles.metricCard}>
+                <Text style={styles.metricValue}>{metric.value}</Text>
+                <Text style={sharedStyles.cardTitle}>{metric.label}</Text>
+                <Text style={sharedStyles.subtle}>{metric.detail}</Text>
+              </View>
+            ))}
           </View>
-        ))}
-      </View>
-      <View style={sharedStyles.card}>
-        <Text style={sharedStyles.cardTitle}>Admin action queue</Text>
-        {queue.length === 0 ? (
-          <Text style={sharedStyles.bodyCopy}>
-            No live admin queue items are visible to this account.
-          </Text>
-        ) : null}
-        {queue.map((action) => (
-          <TouchableOpacity
-            key={action.id}
-            onPress={() => handleApproval(action)}
-            style={styles.actionItem}
-          >
-            <Ionicons
-              color={action.state === "Approved" ? colors.emerald : colors.orange}
-              name={action.state === "Approved" ? "checkmark-circle" : "ellipse-outline"}
-              size={20}
-            />
-            <View style={styles.actionContent}>
-              <Text style={styles.actionText}>{action.label}</Text>
-              <Text style={sharedStyles.subtle}>{action.detail}</Text>
-            </View>
-            <Text
-              style={[styles.actionState, action.state === "Approved" ? styles.actionDone : null]}
-            >
-              {action.kind}
+        </>
+      ) : null}
+      {activeSection === "queue" ? (
+        <View style={sharedStyles.card}>
+          <Text style={sharedStyles.cardTitle}>Admin action queue</Text>
+          <Text style={styles.adminNotice}>{message}</Text>
+          {queue.length === 0 ? (
+            <Text style={sharedStyles.bodyCopy}>
+              No live admin queue items are visible to this account.
             </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      <View style={sharedStyles.card}>
-        <Text style={sharedStyles.cardTitle}>Dispute resolution center</Text>
-        <Text style={sharedStyles.bodyCopy}>
-          Review transactions, delivery evidence, customer reports, and merchant responses.
-        </Text>
-      </View>
-      <View style={sharedStyles.card}>
-        <Text style={sharedStyles.cardTitle}>System audit log</Text>
-        <Text style={sharedStyles.bodyCopy}>
-          Security and compliance events will be stored server-side with admin-only access.
-        </Text>
-      </View>
+          ) : null}
+          {queue.map((action) => (
+            <TouchableOpacity
+              key={action.id}
+              onPress={() => handleApproval(action)}
+              style={styles.actionItem}
+            >
+              <Ionicons
+                color={action.state === "Approved" ? colors.emerald : colors.orange}
+                name={action.state === "Approved" ? "checkmark-circle" : "ellipse-outline"}
+                size={20}
+              />
+              <View style={styles.actionContent}>
+                <Text style={styles.actionText}>{action.label}</Text>
+                <Text style={sharedStyles.subtle}>{action.detail}</Text>
+              </View>
+              <Text
+                style={[styles.actionState, action.state === "Approved" ? styles.actionDone : null]}
+              >
+                {action.kind}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : null}
+      {activeSection === "audit" ? (
+        <>
+          <View style={sharedStyles.card}>
+            <Text style={sharedStyles.cardTitle}>Dispute resolution center</Text>
+            <Text style={sharedStyles.bodyCopy}>
+              Review transactions, delivery evidence, customer reports, and merchant responses.
+            </Text>
+          </View>
+          <View style={sharedStyles.card}>
+            <Text style={sharedStyles.cardTitle}>System audit log</Text>
+            <Text style={sharedStyles.bodyCopy}>
+              Security and compliance events will be stored server-side with admin-only access.
+            </Text>
+          </View>
+        </>
+      ) : null}
     </View>
   );
 }

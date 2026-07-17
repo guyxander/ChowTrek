@@ -66,12 +66,15 @@ import {
   AgentOpportunity,
   CartItem,
   FoodStatus,
+  AgentDashboardSection,
+  AdminDashboardSection,
   NotificationPreference,
   Order,
   OrderStatus,
   PaymentMode,
   Product,
   SavedAddress,
+  MerchantDashboardSection,
   TabKey,
   TimelineEvent,
   Vendor,
@@ -106,6 +109,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>("home");
   const [profilePanel, setProfilePanel] = useState<ProfilePanel>("profile");
   const [routeHistory, setRouteHistory] = useState<AppRoute[]>([]);
+  const [merchantSection, setMerchantSection] = useState<MerchantDashboardSection>("home");
+  const [agentSection, setAgentSection] = useState<AgentDashboardSection>("home");
+  const [adminSection, setAdminSection] = useState<AdminDashboardSection>("home");
   const isRoleDashboard =
     activeTab === "merchant" || activeTab === "agent" || activeTab === "admin";
   const [vendors, setVendors] = useState<Vendor[]>(initialSnapshot.vendors);
@@ -575,6 +581,7 @@ export default function App() {
               }}
               onOpenAddresses={() => navigateTo("profile", "addresses")}
               onOpenCart={() => changeActiveTab("orders")}
+              onOpenNotifications={openPushNotificationSettings}
               onShowNotice={setDataNotice}
               onToggleFollow={toggleVendorFollow}
               products={merchantProducts}
@@ -681,6 +688,7 @@ export default function App() {
             ) : null}
             {activeTab === "merchant" ? (
               <MerchantScreen
+                activeSection={merchantSection}
                 onCreateProduct={addMerchantProduct}
                 onBack={goBack}
                 onCycleProductStatus={cycleProductStatus}
@@ -695,6 +703,7 @@ export default function App() {
             ) : null}
             {activeTab === "agent" ? (
               <AgentScreen
+                activeSection={agentSection}
                 agentOpportunities={agentOpportunities}
                 claimedOpportunityIds={claimedOpportunityIds}
                 deliveredOpportunityIds={deliveredOpportunityIds}
@@ -712,6 +721,7 @@ export default function App() {
             ) : null}
             {activeTab === "admin" ? (
               <AdminScreen
+                activeSection={adminSection}
                 onBack={goBack}
                 onWalletRefresh={refreshWallets}
                 onWalletWithdraw={(amountNaira) => withdrawFromWallet("admin", amountNaira)}
@@ -727,22 +737,67 @@ export default function App() {
               items={
                 activeTab === "merchant"
                   ? [
-                      { active: true, icon: "grid", label: "Home" },
-                      { icon: "receipt", label: "Orders" },
-                      { icon: "fast-food", label: "Products" },
+                      {
+                        active: merchantSection === "home",
+                        icon: "grid",
+                        label: "Home",
+                        onPress: () => setMerchantSection("home")
+                      },
+                      {
+                        active: merchantSection === "orders",
+                        icon: "receipt",
+                        label: "Orders",
+                        onPress: () => setMerchantSection("orders")
+                      },
+                      {
+                        active: merchantSection === "products",
+                        icon: "fast-food",
+                        label: "Products",
+                        onPress: () => setMerchantSection("products")
+                      },
                       { icon: "person", label: "Profile", onPress: () => changeActiveTab("profile") }
                     ]
                   : activeTab === "agent"
                     ? [
-                        { active: true, icon: "grid", label: "Home" },
-                        { icon: "car", label: "Orders" },
-                        { icon: "cash", label: "Earnings" },
+                        {
+                          active: agentSection === "home",
+                          icon: "grid",
+                          label: "Home",
+                          onPress: () => setAgentSection("home")
+                        },
+                        {
+                          active: agentSection === "orders",
+                          icon: "car",
+                          label: "Orders",
+                          onPress: () => setAgentSection("orders")
+                        },
+                        {
+                          active: agentSection === "earnings",
+                          icon: "cash",
+                          label: "Earnings",
+                          onPress: () => setAgentSection("earnings")
+                        },
                         { icon: "person", label: "Profile", onPress: () => changeActiveTab("profile") }
                       ]
                     : [
-                        { active: true, icon: "grid", label: "Home" },
-                        { icon: "checkmark-done", label: "Queue" },
-                        { icon: "warning", label: "Audit" },
+                        {
+                          active: adminSection === "home",
+                          icon: "grid",
+                          label: "Home",
+                          onPress: () => setAdminSection("home")
+                        },
+                        {
+                          active: adminSection === "queue",
+                          icon: "checkmark-done",
+                          label: "Queue",
+                          onPress: () => setAdminSection("queue")
+                        },
+                        {
+                          active: adminSection === "audit",
+                          icon: "warning",
+                          label: "Audit",
+                          onPress: () => setAdminSection("audit")
+                        },
                         { icon: "person", label: "Profile", onPress: () => changeActiveTab("profile") }
                       ]
               }

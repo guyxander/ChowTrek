@@ -30,6 +30,7 @@ type Props = {
   onCartQuantityChange: (itemId: string, delta: number) => void;
   onOpenAddresses: () => void;
   onOpenCart: () => void;
+  onOpenNotifications: () => void;
   onShowNotice: (message: string) => void;
   onToggleFollow: (vendorId: string) => void;
 };
@@ -43,6 +44,7 @@ export function HomeScreen({
   onCartQuantityChange,
   onOpenAddresses,
   onOpenCart,
+  onOpenNotifications,
   onShowNotice,
   onToggleFollow,
   products,
@@ -143,7 +145,7 @@ export function HomeScreen({
             </View>
             <TouchableOpacity
               accessibilityLabel="Show notifications"
-              onPress={() => onShowNotice("Notifications can be managed from your profile.")}
+              onPress={onOpenNotifications}
               style={styles.notificationButton}
             >
               <Ionicons color={colors.deepGreen} name="notifications-outline" size={26} />

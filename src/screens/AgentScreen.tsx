@@ -3,13 +3,14 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { WalletPanel } from "../components/WalletPanel";
 import { colors } from "../theme/colors";
-import { AgentOpportunity, WalletSummary } from "../types/domain";
+import { AgentDashboardSection, AgentOpportunity, WalletSummary } from "../types/domain";
 import { formatNaira } from "../utils/money";
 
 const agentAvatar =
   "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=240&q=80";
 
 type Props = {
+  activeSection: AgentDashboardSection;
   onBack: () => void;
   agentOpportunities: AgentOpportunity[];
   isAvailable: boolean;
@@ -26,6 +27,7 @@ type Props = {
 };
 
 export function AgentScreen({
+  activeSection,
   agentOpportunities,
   claimedOpportunityIds,
   deliveredOpportunityIds,
@@ -65,137 +67,148 @@ export function AgentScreen({
         </TouchableOpacity>
       </View>
 
-      <View style={styles.earningsCard}>
-        <Text style={styles.kicker}>Today's earnings</Text>
-        <Text style={styles.earningsValue}>
-          {formatNaira(agentOpportunities.reduce((sum, item) => sum + item.payoutNaira, 0))}
-        </Text>
-        <View style={styles.trendRow}>
-          <Ionicons color={colors.deepGreen} name="trending-up" size={18} />
-          <Text style={styles.trendText}>12% more than yesterday</Text>
-        </View>
-      </View>
-      <WalletPanel
-        onRefresh={onWalletRefresh}
-        onWithdraw={onWalletWithdraw}
-        title="Delivery payouts"
-        wallet={wallet}
-      />
-
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={styles.sectionTitle}>Hot Zones</Text>
-          <Text style={styles.sectionSubtle}>High demand in these areas</Text>
-        </View>
-        <TouchableOpacity style={styles.iconButton}>
-          <Ionicons color={colors.deepGreen} name="locate" size={22} />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.mapCard}>
-        <View style={styles.mapGrid}>
-          <View style={[styles.mapRoad, styles.mapRoadOne]} />
-          <View style={[styles.mapRoad, styles.mapRoadTwo]} />
-          <View style={[styles.mapRoad, styles.mapRoadThree]} />
-          <View style={[styles.heatRing, styles.heatRingLarge]}>
-            <View style={styles.heatCore}>
-              <Ionicons color="#ffffff" name="flame" size={18} />
+      {activeSection === "home" ? (
+        <>
+          <View style={styles.earningsCard}>
+            <Text style={styles.kicker}>Today's earnings</Text>
+            <Text style={styles.earningsValue}>
+              {formatNaira(agentOpportunities.reduce((sum, item) => sum + item.payoutNaira, 0))}
+            </Text>
+            <View style={styles.trendRow}>
+              <Ionicons color={colors.deepGreen} name="trending-up" size={18} />
+              <Text style={styles.trendText}>12% more than yesterday</Text>
             </View>
           </View>
-          <View style={[styles.heatRing, styles.heatRingSmall]} />
-        </View>
-        <View style={styles.mapBadge}>
-          <View style={styles.orangeDot} />
-          <Text style={styles.mapBadgeText}>Victoria Island: High</Text>
-        </View>
-      </View>
-
-      <View style={styles.routeCard}>
-        <View style={styles.routeIcon}>
-          <Ionicons color={colors.deepGreen} name="navigate" size={28} />
-        </View>
-        <View style={styles.routeContent}>
-          <Text style={styles.routeTitle}>Next Best Area</Text>
-          <Text style={styles.routeText}>
-            Head over to <Text style={styles.routeHighlight}>Ikoyi Hub</Text>. Expected wait time
-            for next order is less than 5 mins.
-          </Text>
-          <TouchableOpacity style={styles.routeButton}>
-            <Text style={styles.routeButtonText}>Route me there</Text>
-            <Ionicons color="#ffffff" name="arrow-forward" size={18} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.statGrid}>
-        <StatCard icon="time" label="Active Hours" value="4h 20m" tone="orange" />
-        <StatCard icon="checkmark-circle" label="Completed" value={`${completedCount} Orders`} tone="green" />
-        <StatCard icon="cube" label="Claimed" value={`${claimedCount} Active`} tone="green" />
-        <StatCard icon="cash" label="Open Payout" value={formatNaira(visibleOpportunities[0]?.payoutNaira ?? 0)} tone="orange" />
-      </View>
-
-      <Text style={styles.sectionTitle}>Delivery Queue</Text>
-      {visibleOpportunities.length > 0 ? (
-        visibleOpportunities.map((opportunity) => {
-          const isClaimed = claimedOpportunityIds.includes(opportunity.id);
-          const isPickedUp = pickedUpOpportunityIds.includes(opportunity.id);
-          const isDelivered = deliveredOpportunityIds.includes(opportunity.id);
-          const stage = isDelivered ? "Delivered" : isPickedUp ? "Picked Up" : isClaimed ? "Claimed" : "Open";
-
-          return (
-            <View key={opportunity.id} style={styles.deliveryCard}>
-              <View style={styles.deliveryHeader}>
-                <View style={styles.deliveryIcon}>
-                  <Ionicons color={colors.deepGreen} name="bicycle" size={22} />
-                </View>
-                <View style={styles.deliveryContent}>
-                  <Text style={styles.deliveryRoute}>{opportunity.route}</Text>
-                  <Text style={styles.deliveryMeta}>
-                    {opportunity.distanceKm} km - {formatNaira(opportunity.payoutNaira)}
-                  </Text>
-                </View>
-                <Text style={styles.stageBadge}>{stage}</Text>
-              </View>
-              <TouchableOpacity
-                disabled={!isAvailable}
-                onPress={() => onToggleOpportunityClaim(opportunity.id)}
-                style={[
-                  styles.primaryAction,
-                  isClaimed ? styles.orangeAction : null,
-                  !isAvailable ? styles.disabledAction : null
-                ]}
-              >
-                <Text style={styles.primaryActionText}>
-                  {isClaimed ? "Release delivery" : "Claim delivery"}
-                </Text>
-              </TouchableOpacity>
-              <View style={styles.actionRow}>
-                <TouchableOpacity
-                  disabled={!isClaimed || isPickedUp}
-                  onPress={() => onMarkPickedUp(opportunity.id)}
-                  style={[styles.secondaryAction, !isClaimed || isPickedUp ? styles.disabledAction : null]}
-                >
-                  <Text style={styles.secondaryActionText}>Pickup proof</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  disabled={!isPickedUp || isDelivered}
-                  onPress={() => onMarkDelivered(opportunity.id)}
-                  style={[styles.secondaryAction, !isPickedUp || isDelivered ? styles.disabledAction : null]}
-                >
-                  <Text style={styles.secondaryActionText}>Delivered</Text>
-                </TouchableOpacity>
-              </View>
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.sectionTitle}>Hot Zones</Text>
+              <Text style={styles.sectionSubtle}>High demand in these areas</Text>
             </View>
-          );
-        })
-      ) : (
-        <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>No delivery opportunities</Text>
-          <Text style={styles.sectionSubtle}>
-            New assigned or open delivery requests will appear here when vendors hand over orders.
-          </Text>
-        </View>
-      )}
+            <TouchableOpacity style={styles.iconButton}>
+              <Ionicons color={colors.deepGreen} name="locate" size={22} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.mapCard}>
+            <View style={styles.mapGrid}>
+              <View style={[styles.mapRoad, styles.mapRoadOne]} />
+              <View style={[styles.mapRoad, styles.mapRoadTwo]} />
+              <View style={[styles.mapRoad, styles.mapRoadThree]} />
+              <View style={[styles.heatRing, styles.heatRingLarge]}>
+                <View style={styles.heatCore}>
+                  <Ionicons color="#ffffff" name="flame" size={18} />
+                </View>
+              </View>
+              <View style={[styles.heatRing, styles.heatRingSmall]} />
+            </View>
+            <View style={styles.mapBadge}>
+              <View style={styles.orangeDot} />
+              <Text style={styles.mapBadgeText}>Victoria Island: High</Text>
+            </View>
+          </View>
+
+          <View style={styles.routeCard}>
+            <View style={styles.routeIcon}>
+              <Ionicons color={colors.deepGreen} name="navigate" size={28} />
+            </View>
+            <View style={styles.routeContent}>
+              <Text style={styles.routeTitle}>Next Best Area</Text>
+              <Text style={styles.routeText}>
+                Head over to <Text style={styles.routeHighlight}>Ikoyi Hub</Text>. Expected wait time
+                for next order is less than 5 mins.
+              </Text>
+              <TouchableOpacity style={styles.routeButton}>
+                <Text style={styles.routeButtonText}>Route me there</Text>
+                <Ionicons color="#ffffff" name="arrow-forward" size={18} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </>
+      ) : null}
+
+      {activeSection === "earnings" ? (
+        <>
+          <WalletPanel
+            onRefresh={onWalletRefresh}
+            onWithdraw={onWalletWithdraw}
+            title="Delivery payouts"
+            wallet={wallet}
+          />
+          <View style={styles.statGrid}>
+            <StatCard icon="time" label="Active Hours" value="4h 20m" tone="orange" />
+            <StatCard icon="checkmark-circle" label="Completed" value={`${completedCount} Orders`} tone="green" />
+            <StatCard icon="cube" label="Claimed" value={`${claimedCount} Active`} tone="green" />
+            <StatCard icon="cash" label="Open Payout" value={formatNaira(visibleOpportunities[0]?.payoutNaira ?? 0)} tone="orange" />
+          </View>
+        </>
+      ) : null}
+
+      {activeSection === "orders" ? (
+        <>
+          <Text style={styles.sectionTitle}>Delivery Queue</Text>
+          {visibleOpportunities.length > 0 ? (
+            visibleOpportunities.map((opportunity) => {
+              const isClaimed = claimedOpportunityIds.includes(opportunity.id);
+              const isPickedUp = pickedUpOpportunityIds.includes(opportunity.id);
+              const isDelivered = deliveredOpportunityIds.includes(opportunity.id);
+              const stage = isDelivered ? "Delivered" : isPickedUp ? "Picked Up" : isClaimed ? "Claimed" : "Open";
+
+              return (
+                <View key={opportunity.id} style={styles.deliveryCard}>
+                  <View style={styles.deliveryHeader}>
+                    <View style={styles.deliveryIcon}>
+                      <Ionicons color={colors.deepGreen} name="bicycle" size={22} />
+                    </View>
+                    <View style={styles.deliveryContent}>
+                      <Text style={styles.deliveryRoute}>{opportunity.route}</Text>
+                      <Text style={styles.deliveryMeta}>
+                        {opportunity.distanceKm} km - {formatNaira(opportunity.payoutNaira)}
+                      </Text>
+                    </View>
+                    <Text style={styles.stageBadge}>{stage}</Text>
+                  </View>
+                  <TouchableOpacity
+                    disabled={!isAvailable}
+                    onPress={() => onToggleOpportunityClaim(opportunity.id)}
+                    style={[
+                      styles.primaryAction,
+                      isClaimed ? styles.orangeAction : null,
+                      !isAvailable ? styles.disabledAction : null
+                    ]}
+                  >
+                    <Text style={styles.primaryActionText}>
+                      {isClaimed ? "Release delivery" : "Claim delivery"}
+                    </Text>
+                  </TouchableOpacity>
+                  <View style={styles.actionRow}>
+                    <TouchableOpacity
+                      disabled={!isClaimed || isPickedUp}
+                      onPress={() => onMarkPickedUp(opportunity.id)}
+                      style={[styles.secondaryAction, !isClaimed || isPickedUp ? styles.disabledAction : null]}
+                    >
+                      <Text style={styles.secondaryActionText}>Pickup proof</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      disabled={!isPickedUp || isDelivered}
+                      onPress={() => onMarkDelivered(opportunity.id)}
+                      style={[styles.secondaryAction, !isPickedUp || isDelivered ? styles.disabledAction : null]}
+                    >
+                      <Text style={styles.secondaryActionText}>Delivered</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })
+          ) : (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>No delivery opportunities</Text>
+              <Text style={styles.sectionSubtle}>
+                New assigned or open delivery requests will appear here when vendors hand over orders.
+              </Text>
+            </View>
+          )}
+        </>
+      ) : null}
     </View>
   );
 }

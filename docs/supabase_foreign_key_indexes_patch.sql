@@ -28,6 +28,8 @@ create index if not exists vendor_timeline_events_product_id_idx on public.vendo
 create index if not exists wallet_ledger_entries_order_id_idx on public.wallet_ledger_entries(order_id);
 create index if not exists wallet_ledger_entries_user_id_idx on public.wallet_ledger_entries(user_id);
 create index if not exists wallet_ledger_entries_wallet_id_idx on public.wallet_ledger_entries(wallet_id);
+create index if not exists wallet_top_up_requests_user_id_idx on public.wallet_top_up_requests(user_id);
+create index if not exists wallet_top_up_requests_wallet_id_idx on public.wallet_top_up_requests(wallet_id);
 create index if not exists wallet_withdrawal_requests_reviewed_by_idx on public.wallet_withdrawal_requests(reviewed_by);
 create index if not exists wallet_withdrawal_requests_user_id_idx on public.wallet_withdrawal_requests(user_id);
 create index if not exists wallet_withdrawal_requests_wallet_id_idx on public.wallet_withdrawal_requests(wallet_id);

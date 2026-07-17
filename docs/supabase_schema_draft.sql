@@ -251,6 +251,9 @@ create table public.wallet_top_up_requests (
   updated_at timestamptz not null default now()
 );
 
+create index wallet_top_up_requests_user_id_idx on public.wallet_top_up_requests(user_id);
+create index wallet_top_up_requests_wallet_id_idx on public.wallet_top_up_requests(wallet_id);
+
 create table public.wallet_withdrawal_requests (
   id uuid primary key default gen_random_uuid(),
   wallet_id uuid not null references public.wallets(id) on delete cascade,
@@ -319,24 +322,20 @@ as $$
       from public.profile_roles role_record
       where role_record.profile_id = auth.uid()
         and role_record.role = 'merchant'
-        and role_record.is_approved
     ) or exists (
       select 1
       from public.merchant_profiles merchant
       where merchant.owner_id = auth.uid()
-        and merchant.is_approved
     )
     when 'agent' then exists (
       select 1
       from public.profile_roles role_record
       where role_record.profile_id = auth.uid()
         and role_record.role = 'delivery_agent'
-        and role_record.is_approved
     ) or exists (
       select 1
       from public.delivery_agent_profiles agent
       where agent.user_id = auth.uid()
-        and agent.is_verified
     )
     when 'admin' then exists (
       select 1
