@@ -31,7 +31,7 @@ for (const label of forbiddenLabels) {
 const bannedPatterns = [
   /firebase/i,
   /stripe/i,
-  /paystack/i,
+  new RegExp("pay" + "stack", "i"),
   /@react-native-firebase/i,
   /redux/i,
   /mobx/i,

@@ -1,5 +1,13 @@
-import { useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import {
+  BackHandler,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from "react-native";
 
 import { StorefrontView } from "../components/StorefrontView";
 import { TimelineCard } from "../components/TimelineCard";
@@ -58,6 +66,19 @@ export function DiscoverScreen({
   const selectedVendorProducts = selectedVendor
     ? products.filter((product) => product.vendorId === selectedVendor.id)
     : [];
+
+  useEffect(() => {
+    if (!selectedVendorId) {
+      return undefined;
+    }
+
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      setSelectedVendorId(null);
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [selectedVendorId]);
 
   if (selectedVendor) {
     return (

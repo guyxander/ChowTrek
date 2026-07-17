@@ -19,7 +19,6 @@ import {
   activateAgentProfile,
   activateMerchantProfile
 } from "../repositories/roleOnboardingRepository";
-import { requestPushNotificationPermission } from "../repositories/notificationRepository";
 import { colors } from "../theme/colors";
 import { NotificationPreference, TabKey, WalletSummary } from "../types/domain";
 import { formatNaira } from "../utils/money";
@@ -52,18 +51,28 @@ const legalLinks = [
 ];
 
 type Props = {
+  onOpenAddresses: () => void;
+  onOpenFavorites: () => void;
+  onOpenInvite: () => void;
   onOpenRole: (tab: TabKey) => void;
+  onOpenSettings: () => void;
+  onOpenSupport: () => void;
   onOpenWallet: () => void;
   notificationPreferences: NotificationPreference[];
-  onToggleNotification: (preferenceId: string) => void;
+  onOpenNotifications: () => void;
   wallet: WalletSummary;
 };
 
 export function ProfileScreen({
   notificationPreferences,
+  onOpenAddresses,
+  onOpenFavorites,
+  onOpenInvite,
+  onOpenNotifications,
   onOpenRole,
+  onOpenSettings,
+  onOpenSupport,
   onOpenWallet,
-  onToggleNotification,
   wallet
 }: Props) {
   const [message, setMessage] = useState("Sign in to sync your ChowTrek profile.");
@@ -119,13 +128,6 @@ export function ProfileScreen({
     }
   }
 
-  async function handlePushPermission() {
-    setIsSending(true);
-    const result = await requestPushNotificationPermission();
-    setMessage(result.message);
-    setIsSending(false);
-  }
-
   return (
     <View>
       <View style={styles.topBar}>
@@ -163,15 +165,15 @@ export function ProfileScreen({
 
       <SectionTitle title="Quick Actions" />
       <View style={styles.bentoGrid}>
-        <BentoAction icon="heart" label="My Favorites" tone="green" />
-        <BentoAction icon="location" label="Addresses" tone="orange" />
+        <BentoAction icon="heart" label="My Favorites" tone="green" onPress={onOpenFavorites} />
+        <BentoAction icon="location" label="Addresses" tone="orange" onPress={onOpenAddresses} />
         <BentoAction
           icon="wallet"
           label={`Wallet ${formatNaira(wallet.availableBalanceNaira)}`}
           tone="green"
           onPress={onOpenWallet}
         />
-        <BentoAction icon="notifications" label="Notifications" tone="orange" onPress={handlePushPermission} />
+        <BentoAction icon="notifications" label="Notifications" tone="orange" onPress={onOpenNotifications} />
       </View>
 
       <SectionTitle title="Role Dashboards" />
@@ -183,7 +185,7 @@ export function ProfileScreen({
 
       <View style={styles.sectionHeaderRow}>
         <Text style={styles.sectionTitle}>Favorite Merchants</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={onOpenFavorites}>
           <Text style={styles.viewAllText}>View All</Text>
         </TouchableOpacity>
       </View>
@@ -212,9 +214,10 @@ export function ProfileScreen({
 
       <View style={styles.menuCard}>
         <MenuRow icon="wallet-outline" label="Wallet" onPress={onOpenWallet} />
-        <MenuRow icon="settings-outline" label="Settings" />
-        <MenuRow icon="help-circle-outline" label="Help & Support" />
-        <MenuRow icon="people-outline" label="Invite Friends" />
+        <MenuRow icon="location-outline" label="Addresses" onPress={onOpenAddresses} />
+        <MenuRow icon="settings-outline" label="Settings" onPress={onOpenSettings} />
+        <MenuRow icon="help-circle-outline" label="Help & Support" onPress={onOpenSupport} />
+        <MenuRow icon="people-outline" label="Invite Friends" onPress={onOpenInvite} />
         <MenuRow
           danger
           icon="log-out-outline"
@@ -228,7 +231,7 @@ export function ProfileScreen({
         {notificationPreferences.map((preference) => (
           <TouchableOpacity
             key={preference.id}
-            onPress={() => onToggleNotification(preference.id)}
+            onPress={onOpenNotifications}
             style={styles.preferenceRow}
           >
             <Text style={styles.preferenceLabel}>{preference.label}</Text>

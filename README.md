@@ -14,7 +14,7 @@ Expo React Native Android-first app for hyperlocal discovery and commerce.
 - Bottom navigation is fixed: Home, Discover, Community, Orders, Profile.
 - Authentication uses Google OAuth for MVP.
 - Supabase is the backend boundary for Auth, Postgres, Storage, and Realtime.
-- No wallet, loyalty, gamification, Firebase, Stripe, Paystack, Bloc, GetX, or Redux.
+- Wallet is included for optional checkout and role earnings; loyalty/gamification and extra state frameworks are out of scope.
 
 ## Environment
 

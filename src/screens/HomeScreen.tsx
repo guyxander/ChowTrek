@@ -1,6 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  BackHandler,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from "react-native";
 
 import { BrandLogo } from "../components/BrandLogo";
 import { ModeChip } from "../components/ModeChip";
@@ -20,6 +28,7 @@ type Props = {
   onAddToCart: (product: Product, vendor: Vendor) => void;
   onCreateAddress: () => Promise<SavedAddress | null>;
   onCartQuantityChange: (itemId: string, delta: number) => void;
+  onOpenAddresses: () => void;
   onOpenCart: () => void;
   onShowNotice: (message: string) => void;
   onToggleFollow: (vendorId: string) => void;
@@ -32,6 +41,7 @@ export function HomeScreen({
   onAddToCart,
   onCreateAddress,
   onCartQuantityChange,
+  onOpenAddresses,
   onOpenCart,
   onShowNotice,
   onToggleFollow,
@@ -79,6 +89,19 @@ export function HomeScreen({
     ? products.filter((product) => product.vendorId === selectedVendor.id)
     : [];
 
+  useEffect(() => {
+    if (!selectedVendorId) {
+      return undefined;
+    }
+
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      setSelectedVendorId(null);
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [selectedVendorId]);
+
   if (selectedVendor) {
     return (
       <StorefrontView
@@ -122,7 +145,7 @@ export function HomeScreen({
         </View>
         <View style={styles.addressCard}>
           <TouchableOpacity
-            onPress={() => onShowNotice("Saved addresses are ready for Supabase address management.")}
+            onPress={onOpenAddresses}
             style={styles.addressMain}
           >
             <Ionicons color={colors.deepGreen} name="location" size={19} />

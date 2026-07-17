@@ -188,7 +188,7 @@ function buildDemoWallet(role: WalletRole, message: string): WalletSummary {
     availableBalanceNaira: balance,
     pendingBalanceNaira: role === "customer" ? 0 : Math.round(balance * 0.22),
     totalEarnedNaira: role === "customer" ? balance : Math.round(balance * 1.6),
-    virtualAccount: role === "customer" ? "Paystack-Titan • Pending" : "ChowTrek Settlements • Pending",
+    virtualAccount: role === "customer" ? "ChowTrek Wallet • Pending" : "ChowTrek Settlements • Pending",
     savedBank: "No withdrawal bank saved",
     message,
     ledger: [

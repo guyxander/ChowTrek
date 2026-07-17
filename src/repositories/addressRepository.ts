@@ -118,6 +118,31 @@ export async function createSavedAddress(label: string, addressLine: string): Pr
   };
 }
 
+export async function deleteSavedAddress(addressId: string): Promise<{ message: string; ok: boolean }> {
+  if (!supabase) {
+    return { message: "Address removed locally.", ok: true };
+  }
+
+  const userResult = await supabase.auth.getUser();
+  const userId = userResult.data.user?.id;
+
+  if (!userId) {
+    return { message: "Address removed locally. Sign in with Google to sync changes.", ok: true };
+  }
+
+  const { error } = await supabase
+    .from("addresses")
+    .delete()
+    .eq("id", addressId)
+    .eq("user_id", userId);
+
+  if (error) {
+    return { message: `Address was not deleted: ${error.message}`, ok: false };
+  }
+
+  return { message: "Address deleted from Supabase.", ok: true };
+}
+
 function buildLocalAddress(label: string, addressLine: string): SavedAddress {
   return {
     id: `address-${Date.now()}`,

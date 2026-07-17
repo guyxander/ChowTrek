@@ -1,22 +1,41 @@
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { Linking, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  BackHandler,
+  Linking,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar as NativeStatusBar,
+  StyleSheet,
+  Text,
+  View
+} from "react-native";
 
 import { BottomNav } from "./src/components/BottomNav";
 import { RoleDashboardNav } from "./src/components/RoleDashboardNav";
 import { AgentScreen } from "./src/screens/AgentScreen";
 import { AdminScreen } from "./src/screens/AdminScreen";
+import { AddressesScreen } from "./src/screens/AddressesScreen";
 import { CommunityScreen } from "./src/screens/CommunityScreen";
 import { DiscoverScreen } from "./src/screens/DiscoverScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
 import { MerchantScreen } from "./src/screens/MerchantScreen";
 import { OrdersScreen } from "./src/screens/OrdersScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
+import {
+  FavoritesScreen,
+  InviteScreen,
+  NotificationSettingsScreen,
+  SettingsScreen,
+  SupportScreen
+} from "./src/screens/ProfileUtilityScreens";
 import { WalletScreen } from "./src/screens/WalletScreen";
 import { createCheckoutOrder } from "./src/repositories/checkoutRepository";
 import { getInitialCommerceSnapshot, loadCommerceSnapshot } from "./src/repositories/commerceSnapshot";
 import {
   createSavedAddress,
+  deleteSavedAddress,
   fallbackAddresses,
   loadSavedAddresses
 } from "./src/repositories/addressRepository";
@@ -25,6 +44,7 @@ import {
   updateMerchantStorefront
 } from "./src/repositories/merchantProductRepository";
 import { updateMerchantOrderStatus } from "./src/repositories/orderStatusRepository";
+import { requestPushNotificationPermission } from "./src/repositories/notificationRepository";
 import { loadWalletSummary, requestWalletWithdrawal } from "./src/repositories/walletRepository";
 import {
   syncAgentAvailability,
@@ -60,10 +80,26 @@ const initialWallets: Record<WalletRole, WalletSummary> = {
   admin: createInitialWallet("admin")
 };
 
+type ProfilePanel =
+  | "profile"
+  | "wallet"
+  | "addresses"
+  | "favorites"
+  | "notifications"
+  | "settings"
+  | "support"
+  | "invite";
+
+type AppRoute = {
+  panel: ProfilePanel;
+  tab: TabKey;
+};
+
 export default function App() {
   const initialSnapshot = getInitialCommerceSnapshot();
   const [activeTab, setActiveTab] = useState<TabKey>("home");
-  const [profilePanel, setProfilePanel] = useState<"profile" | "wallet">("profile");
+  const [profilePanel, setProfilePanel] = useState<ProfilePanel>("profile");
+  const [routeHistory, setRouteHistory] = useState<AppRoute[]>([]);
   const isRoleDashboard =
     activeTab === "merchant" || activeTab === "agent" || activeTab === "admin";
   const [vendors, setVendors] = useState<Vendor[]>(initialSnapshot.vendors);
@@ -147,6 +183,22 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (routeHistory.length === 0) {
+        return false;
+      }
+
+      const previousRoute = routeHistory[routeHistory.length - 1];
+      setRouteHistory((currentHistory) => currentHistory.slice(0, -1));
+      setActiveTab(previousRoute.tab);
+      setProfilePanel(previousRoute.panel);
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [routeHistory]);
+
   async function refreshWallets() {
     const [customer, merchant, agent, admin] = await Promise.all([
       loadWalletSummary("customer"),
@@ -187,6 +239,19 @@ export default function App() {
     return result.address;
   }
 
+  async function removeSavedAddress(addressId: string) {
+    const result = await deleteSavedAddress(addressId);
+    setDataNotice(result.message);
+
+    if (result.ok) {
+      setSavedAddresses((currentAddresses) =>
+        currentAddresses.length > 1
+          ? currentAddresses.filter((address) => address.id !== addressId)
+          : currentAddresses
+      );
+    }
+  }
+
   async function withdrawFromWallet(role: WalletRole, amountNaira: number) {
     const result = await requestWalletWithdrawal(role, amountNaira);
     setDataNotice(result.message);
@@ -201,16 +266,45 @@ export default function App() {
   }
 
   function openCustomerWallet() {
-    setProfilePanel("wallet");
-    setActiveTab("profile");
+    navigateTo("profile", "wallet");
+  }
+
+  function currentRoute(): AppRoute {
+    return {
+      panel: profilePanel,
+      tab: activeTab
+    };
+  }
+
+  function goBack() {
+    if (routeHistory.length === 0) {
+      navigateTo("home");
+      return;
+    }
+
+    const previousRoute = routeHistory[routeHistory.length - 1];
+    setRouteHistory((currentHistory) => currentHistory.slice(0, -1));
+    setActiveTab(previousRoute.tab);
+    setProfilePanel(previousRoute.panel);
+  }
+
+  function navigateTo(tab: TabKey, panel: ProfilePanel = "profile") {
+    setRouteHistory((currentHistory) => [...currentHistory, currentRoute()]);
+    setActiveTab(tab);
+    setProfilePanel(tab === "profile" ? panel : "profile");
   }
 
   function changeActiveTab(tab: TabKey) {
-    if (tab !== "profile") {
-      setProfilePanel("profile");
-    }
+    navigateTo(tab);
+  }
 
-    setActiveTab(tab);
+  async function openPushNotificationSettings() {
+    navigateTo("profile", "notifications");
+  }
+
+  async function requestPushAlerts() {
+    const result = await requestPushNotificationPermission();
+    setDataNotice(result.message);
   }
 
   async function toggleVendorFollow(vendorId: string) {
@@ -439,6 +533,7 @@ export default function App() {
               onAddToCart={addProductToCart}
               onCreateAddress={addSavedAddress}
               onCartQuantityChange={changeCartQuantity}
+              onOpenAddresses={() => navigateTo("profile", "addresses")}
               onOpenCart={() => changeActiveTab("orders")}
               onShowNotice={setDataNotice}
               onToggleFollow={toggleVendorFollow}
@@ -487,24 +582,64 @@ export default function App() {
             {activeTab === "profile" && profilePanel === "profile" ? (
               <ProfileScreen
                 notificationPreferences={notificationPreferences}
+                onOpenAddresses={() => navigateTo("profile", "addresses")}
+                onOpenFavorites={() => navigateTo("profile", "favorites")}
+                onOpenInvite={() => navigateTo("profile", "invite")}
+                onOpenNotifications={openPushNotificationSettings}
                 onOpenRole={changeActiveTab}
+                onOpenSettings={() => navigateTo("profile", "settings")}
+                onOpenSupport={() => navigateTo("profile", "support")}
                 onOpenWallet={openCustomerWallet}
-                onToggleNotification={toggleNotificationPreference}
                 wallet={wallets.customer}
               />
             ) : null}
             {activeTab === "profile" && profilePanel === "wallet" ? (
               <WalletScreen
                 onAddMoney={openWalletTopUpNotice}
-                onBack={() => setProfilePanel("profile")}
+                onBack={goBack}
                 onRefresh={refreshWallets}
                 wallet={wallets.customer}
               />
             ) : null}
+            {activeTab === "profile" && profilePanel === "addresses" ? (
+              <AddressesScreen
+                addresses={savedAddresses}
+                onAddAddress={addSavedAddress}
+                onBack={goBack}
+                onDeleteAddress={(addressId) => {
+                  void removeSavedAddress(addressId);
+                }}
+                onRefresh={refreshSavedAddresses}
+              />
+            ) : null}
+            {activeTab === "profile" && profilePanel === "favorites" ? (
+              <FavoritesScreen
+                onBack={goBack}
+                onOpenVendor={() => navigateTo("home")}
+                vendors={vendors}
+              />
+            ) : null}
+            {activeTab === "profile" && profilePanel === "notifications" ? (
+              <NotificationSettingsScreen
+                notificationPreferences={notificationPreferences}
+                onBack={goBack}
+                onRequestPush={requestPushAlerts}
+                onToggleNotification={toggleNotificationPreference}
+              />
+            ) : null}
+            {activeTab === "profile" && profilePanel === "settings" ? (
+              <SettingsScreen onBack={goBack} />
+            ) : null}
+            {activeTab === "profile" && profilePanel === "support" ? (
+              <SupportScreen onBack={goBack} />
+            ) : null}
+            {activeTab === "profile" && profilePanel === "invite" ? (
+              <InviteScreen onBack={goBack} />
+            ) : null}
             {activeTab === "merchant" ? (
               <MerchantScreen
                 onCreateProduct={addMerchantProduct}
-                onBack={() => changeActiveTab("profile")}
+                onBack={goBack}
                 onCycleProductStatus={cycleProductStatus}
                 onSaveStorefront={saveMerchantStorefront}
                 onUpdateOrderStatus={changeMerchantOrderStatus}
@@ -522,7 +657,7 @@ export default function App() {
                 deliveredOpportunityIds={deliveredOpportunityIds}
                 isAvailable={isAgentAvailable}
                 pickedUpOpportunityIds={pickedUpOpportunityIds}
-                onBack={() => changeActiveTab("profile")}
+                onBack={goBack}
                 onMarkDelivered={markOpportunityDelivered}
                 onMarkPickedUp={markOpportunityPickedUp}
                 onToggleAvailability={toggleAgentAvailability}
@@ -534,7 +669,7 @@ export default function App() {
             ) : null}
             {activeTab === "admin" ? (
               <AdminScreen
-                onBack={() => changeActiveTab("profile")}
+                onBack={goBack}
                 onWalletRefresh={refreshWallets}
                 onWalletWithdraw={(amountNaira) => withdrawFromWallet("admin", amountNaira)}
                 wallet={wallets.admin}
@@ -593,7 +728,8 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     backgroundColor: colors.surface,
-    flex: 1
+    flex: 1,
+    paddingTop: Platform.OS === "android" ? NativeStatusBar.currentHeight ?? 0 : 0
   },
   roleDashboardContent: {
     paddingBottom: 112
