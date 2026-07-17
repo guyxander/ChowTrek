@@ -725,7 +725,6 @@ export default function App() {
             {activeTab === "community" ? <CommunityScreen timelineEvents={timelineEvents} /> : null}
             {activeTab === "profile" && profilePanel === "profile" ? (
               <ProfileScreen
-                notificationPreferences={notificationPreferences}
                 onOpenAddresses={() => navigateTo("profile", "addresses")}
                 onOpenEdit={() => navigateTo("profile", "edit")}
                 onOpenFavorites={() => navigateTo("profile", "favorites")}

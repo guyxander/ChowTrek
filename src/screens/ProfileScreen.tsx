@@ -20,7 +20,7 @@ import {
   activateMerchantProfile
 } from "../repositories/roleOnboardingRepository";
 import { colors } from "../theme/colors";
-import { NotificationPreference, TabKey, WalletSummary } from "../types/domain";
+import { TabKey, WalletSummary } from "../types/domain";
 import { formatNaira } from "../utils/money";
 
 const profileImage =
@@ -59,13 +59,11 @@ type Props = {
   onOpenSettings: () => void;
   onOpenSupport: () => void;
   onOpenWallet: () => void;
-  notificationPreferences: NotificationPreference[];
   onOpenNotifications: () => void;
   wallet: WalletSummary;
 };
 
 export function ProfileScreen({
-  notificationPreferences,
   onOpenAddresses,
   onOpenEdit,
   onOpenFavorites,
@@ -228,22 +226,6 @@ export function ProfileScreen({
         />
       </View>
 
-      <View style={styles.notificationCard}>
-        <Text style={styles.cardTitle}>Notification categories</Text>
-        {notificationPreferences.map((preference) => (
-          <TouchableOpacity
-            key={preference.id}
-            onPress={onOpenNotifications}
-            style={styles.preferenceRow}
-          >
-            <Text style={styles.preferenceLabel}>{preference.label}</Text>
-            <Text style={[styles.preferenceState, preference.enabled ? styles.enabled : null]}>
-              {preference.enabled ? "On" : "Off"}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
       <View style={styles.footer}>
         <Text style={styles.versionText}>ChowTrek v0.1.0</Text>
         <View style={styles.legalRow}>
@@ -371,12 +353,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "800"
   },
-  cardTitle: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: "800",
-    marginBottom: 6
-  },
   dangerText: {
     color: colors.error
   },
@@ -395,10 +371,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     width: 32
-  },
-  enabled: {
-    backgroundColor: colors.successSoft,
-    color: colors.greenContainer
   },
   favoriteList: {
     gap: 12,
@@ -500,34 +472,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 15,
     fontWeight: "800"
-  },
-  notificationCard: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    marginTop: 12,
-    padding: 16
-  },
-  preferenceLabel: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: "700"
-  },
-  preferenceRow: {
-    alignItems: "center",
-    borderTopColor: colors.line,
-    borderTopWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 12
-  },
-  preferenceState: {
-    backgroundColor: "#f3f4f6",
-    borderRadius: 999,
-    color: colors.muted,
-    fontSize: 12,
-    fontWeight: "900",
-    paddingHorizontal: 10,
-    paddingVertical: 5
   },
   profileHeader: {
     alignItems: "center",
