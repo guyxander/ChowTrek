@@ -3,10 +3,8 @@ import { useEffect, useState } from "react";
 import {
   BackHandler,
   Linking,
-  Platform,
   SafeAreaView,
   ScrollView,
-  StatusBar as NativeStatusBar,
   StyleSheet,
   Text,
   View
@@ -619,7 +617,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" />
+      <StatusBar backgroundColor={colors.surface} style="dark" translucent={false} />
       <View style={styles.app}>
         {activeTab === "home" ? (
           <View style={[styles.content, styles.fixedCustomerContent]}>
@@ -886,7 +884,7 @@ const styles = StyleSheet.create({
   safeArea: {
     backgroundColor: colors.surface,
     flex: 1,
-    paddingTop: Platform.OS === "android" ? NativeStatusBar.currentHeight ?? 0 : 0
+    paddingTop: 0
   },
   roleDashboardContent: {
     paddingBottom: 112
