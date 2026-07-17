@@ -4,7 +4,6 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 import { BrandLogo } from "../components/BrandLogo";
 import { OrderCard } from "../components/OrderCard";
-import { WalletPanel } from "../components/WalletPanel";
 import { colors } from "../theme/colors";
 import { CartItem, Order, PaymentMode, WalletSummary } from "../types/domain";
 import { formatNaira } from "../utils/money";
@@ -19,8 +18,8 @@ type Props = {
   wallet: WalletSummary;
   onCartQuantityChange: (itemId: string, delta: number) => void;
   onCheckout: (items?: CartItem[]) => void;
+  onOpenWallet: () => void;
   onPaymentModeChange: (mode: PaymentMode) => void;
-  onWalletAddMoney: () => void;
   onWalletRefresh: () => void;
 };
 
@@ -42,8 +41,8 @@ export function OrdersScreen({
   dataNotice,
   onCartQuantityChange,
   onCheckout,
+  onOpenWallet,
   onPaymentModeChange,
-  onWalletAddMoney,
   onWalletRefresh,
   orders,
   paymentMode,
@@ -116,8 +115,8 @@ export function OrdersScreen({
           <CartTab
             onCartQuantityChange={onCartQuantityChange}
             onCheckout={onCheckout}
+            onOpenWallet={onOpenWallet}
             onPaymentModeChange={onPaymentModeChange}
-            onWalletAddMoney={onWalletAddMoney}
             onWalletRefresh={onWalletRefresh}
             paymentMode={paymentMode}
             wallet={wallet}
@@ -134,8 +133,8 @@ export function OrdersScreen({
 function CartTab({
   onCartQuantityChange,
   onCheckout,
+  onOpenWallet,
   onPaymentModeChange,
-  onWalletAddMoney,
   onWalletRefresh,
   paymentMode,
   wallet,
@@ -146,8 +145,8 @@ function CartTab({
   wallet: WalletSummary;
   onCartQuantityChange: (itemId: string, delta: number) => void;
   onCheckout: (items?: CartItem[]) => void;
+  onOpenWallet: () => void;
   onPaymentModeChange: (mode: PaymentMode) => void;
-  onWalletAddMoney: () => void;
   onWalletRefresh: () => void;
 }) {
   return (
@@ -171,13 +170,21 @@ function CartTab({
         ))}
       </View>
       {paymentMode === "Wallet" ? (
-        <WalletPanel
-          compact
-          onAddMoney={onWalletAddMoney}
-          onRefresh={onWalletRefresh}
-          title="Checkout Wallet"
-          wallet={wallet}
-        />
+        <View style={styles.walletSummary}>
+          <View style={styles.walletSummaryIcon}>
+            <Ionicons color={colors.deepGreen} name="wallet-outline" size={21} />
+          </View>
+          <View style={styles.walletSummaryCopy}>
+            <Text style={styles.walletSummaryLabel}>Wallet balance</Text>
+            <Text style={styles.walletSummaryValue}>{formatNaira(wallet.availableBalanceNaira)}</Text>
+          </View>
+          <TouchableOpacity onPress={onOpenWallet} style={styles.walletTopUpButton}>
+            <Text style={styles.walletTopUpText}>Top up</Text>
+          </TouchableOpacity>
+          <TouchableOpacity accessibilityLabel="Refresh wallet balance" onPress={onWalletRefresh} style={styles.walletRefresh}>
+            <Ionicons color={colors.deepGreen} name="refresh" size={18} />
+          </TouchableOpacity>
+        </View>
       ) : null}
 
       {vendorCarts.length > 0 ? (
@@ -633,5 +640,58 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between"
+  },
+  walletRefresh: {
+    alignItems: "center",
+    backgroundColor: colors.successSoft,
+    borderRadius: 999,
+    height: 34,
+    justifyContent: "center",
+    width: 34
+  },
+  walletSummary: {
+    alignItems: "center",
+    backgroundColor: colors.card,
+    borderColor: "rgba(191, 201, 195, 0.28)",
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 12,
+    padding: 12
+  },
+  walletSummaryCopy: {
+    flex: 1
+  },
+  walletSummaryIcon: {
+    alignItems: "center",
+    backgroundColor: colors.successSoft,
+    borderRadius: 12,
+    height: 42,
+    justifyContent: "center",
+    width: 42
+  },
+  walletSummaryLabel: {
+    color: colors.muted,
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "uppercase"
+  },
+  walletSummaryValue: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "900",
+    marginTop: 2
+  },
+  walletTopUpButton: {
+    backgroundColor: colors.deepGreen,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8
+  },
+  walletTopUpText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "900"
   }
 });

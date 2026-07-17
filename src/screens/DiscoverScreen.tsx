@@ -1,27 +1,33 @@
 import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
+import { StorefrontView } from "../components/StorefrontView";
 import { TimelineCard } from "../components/TimelineCard";
 import { VendorCard } from "../components/VendorCard";
-import { VendorMenuPanel } from "../components/VendorMenuPanel";
 import { colors } from "../theme/colors";
 import { sharedStyles } from "../theme/sharedStyles";
-import { Product, TimelineEvent, Vendor } from "../types/domain";
+import { CartItem, Product, TimelineEvent, Vendor } from "../types/domain";
 
 const filters = ["Food Ready Near You", "New Products", "Special Offers", "Following"];
 
 type Props = {
+  cartItems: CartItem[];
   dataNotice: string;
   products: Product[];
   vendors: Vendor[];
   timelineEvents: TimelineEvent[];
   onAddToCart: (product: Product, vendor: Vendor) => void;
+  onCartQuantityChange: (itemId: string, delta: number) => void;
+  onOpenCart: () => void;
   onToggleFollow: (vendorId: string) => void;
 };
 
 export function DiscoverScreen({
+  cartItems,
   dataNotice,
   onAddToCart,
+  onCartQuantityChange,
+  onOpenCart,
   onToggleFollow,
   products,
   timelineEvents,
@@ -52,6 +58,21 @@ export function DiscoverScreen({
   const selectedVendorProducts = selectedVendor
     ? products.filter((product) => product.vendorId === selectedVendor.id)
     : [];
+
+  if (selectedVendor) {
+    return (
+      <StorefrontView
+        cartItems={cartItems}
+        onAddToCart={onAddToCart}
+        onBack={() => setSelectedVendorId(null)}
+        onCartQuantityChange={onCartQuantityChange}
+        onOpenCart={onOpenCart}
+        onToggleFollow={onToggleFollow}
+        products={selectedVendorProducts}
+        vendor={selectedVendor}
+      />
+    );
+  }
 
   return (
     <View style={styles.screen}>
@@ -99,15 +120,6 @@ export function DiscoverScreen({
         showsVerticalScrollIndicator={false}
         style={styles.discoverScroll}
       >
-        {selectedVendor ? (
-          <VendorMenuPanel
-            onAddToCart={onAddToCart}
-            onClose={() => setSelectedVendorId(null)}
-            onToggleFollow={onToggleFollow}
-            products={selectedVendorProducts}
-            vendor={selectedVendor}
-          />
-        ) : null}
         {filteredVendors.length > 0 ? (
           filteredVendors.map((vendor) => (
             <VendorCard

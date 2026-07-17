@@ -30,6 +30,14 @@ export type Vendor = {
   deliveryModes: FulfilmentMode[];
 };
 
+export type SavedAddress = {
+  id: string;
+  label: string;
+  detail: string;
+  area: string;
+  distanceBiasKm: number;
+};
+
 export type TimelineEvent = {
   id: string;
   vendor: string;

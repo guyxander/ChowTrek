@@ -12,6 +12,7 @@ import { HomeScreen } from "./src/screens/HomeScreen";
 import { MerchantScreen } from "./src/screens/MerchantScreen";
 import { OrdersScreen } from "./src/screens/OrdersScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
+import { WalletScreen } from "./src/screens/WalletScreen";
 import { createCheckoutOrder } from "./src/repositories/checkoutRepository";
 import { getInitialCommerceSnapshot, loadCommerceSnapshot } from "./src/repositories/commerceSnapshot";
 import {
@@ -56,6 +57,7 @@ const initialWallets: Record<WalletRole, WalletSummary> = {
 export default function App() {
   const initialSnapshot = getInitialCommerceSnapshot();
   const [activeTab, setActiveTab] = useState<TabKey>("home");
+  const [profilePanel, setProfilePanel] = useState<"profile" | "wallet">("profile");
   const isRoleDashboard =
     activeTab === "merchant" || activeTab === "agent" || activeTab === "admin";
   const [vendors, setVendors] = useState<Vendor[]>(initialSnapshot.vendors);
@@ -159,6 +161,19 @@ export default function App() {
 
   function openWalletTopUpNotice() {
     setDataNotice("Wallet top-up needs a funding provider before live deposits can be collected.");
+  }
+
+  function openCustomerWallet() {
+    setProfilePanel("wallet");
+    setActiveTab("profile");
+  }
+
+  function changeActiveTab(tab: TabKey) {
+    if (tab !== "profile") {
+      setProfilePanel("profile");
+    }
+
+    setActiveTab(tab);
   }
 
   async function toggleVendorFollow(vendorId: string) {
@@ -381,8 +396,11 @@ export default function App() {
         {activeTab === "home" ? (
           <View style={[styles.content, styles.fixedCustomerContent]}>
             <HomeScreen
+              cartItems={cartItems}
               dataNotice={dataNotice}
               onAddToCart={addProductToCart}
+              onCartQuantityChange={changeCartQuantity}
+              onOpenCart={() => changeActiveTab("orders")}
               onShowNotice={setDataNotice}
               onToggleFollow={toggleVendorFollow}
               products={merchantProducts}
@@ -392,8 +410,11 @@ export default function App() {
         ) : activeTab === "discover" ? (
           <View style={[styles.content, styles.fixedCustomerContent]}>
             <DiscoverScreen
+              cartItems={cartItems}
               dataNotice={dataNotice}
               onAddToCart={addProductToCart}
+              onCartQuantityChange={changeCartQuantity}
+              onOpenCart={() => changeActiveTab("orders")}
               onToggleFollow={toggleVendorFollow}
               products={merchantProducts}
               timelineEvents={timelineEvents}
@@ -407,10 +428,10 @@ export default function App() {
               dataNotice={dataNotice}
               onCartQuantityChange={changeCartQuantity}
               onCheckout={checkoutCart}
+              onOpenWallet={openCustomerWallet}
               orders={orders}
               paymentMode={paymentMode}
               onPaymentModeChange={setPaymentMode}
-              onWalletAddMoney={openWalletTopUpNotice}
               onWalletRefresh={refreshWallets}
               wallet={wallets.customer}
             />
@@ -424,17 +445,27 @@ export default function App() {
           >
             {!isRoleDashboard ? <Text style={styles.dataNotice}>{dataNotice}</Text> : null}
             {activeTab === "community" ? <CommunityScreen timelineEvents={timelineEvents} /> : null}
-            {activeTab === "profile" ? (
+            {activeTab === "profile" && profilePanel === "profile" ? (
               <ProfileScreen
                 notificationPreferences={notificationPreferences}
-                onOpenRole={setActiveTab}
+                onOpenRole={changeActiveTab}
+                onOpenWallet={openCustomerWallet}
                 onToggleNotification={toggleNotificationPreference}
+                wallet={wallets.customer}
+              />
+            ) : null}
+            {activeTab === "profile" && profilePanel === "wallet" ? (
+              <WalletScreen
+                onAddMoney={openWalletTopUpNotice}
+                onBack={() => setProfilePanel("profile")}
+                onRefresh={refreshWallets}
+                wallet={wallets.customer}
               />
             ) : null}
             {activeTab === "merchant" ? (
               <MerchantScreen
                 onCreateProduct={addMerchantProduct}
-                onBack={() => setActiveTab("profile")}
+                onBack={() => changeActiveTab("profile")}
                 onCycleProductStatus={cycleProductStatus}
                 onSaveStorefront={saveMerchantStorefront}
                 onUpdateOrderStatus={changeMerchantOrderStatus}
@@ -452,7 +483,7 @@ export default function App() {
                 deliveredOpportunityIds={deliveredOpportunityIds}
                 isAvailable={isAgentAvailable}
                 pickedUpOpportunityIds={pickedUpOpportunityIds}
-                onBack={() => setActiveTab("profile")}
+                onBack={() => changeActiveTab("profile")}
                 onMarkDelivered={markOpportunityDelivered}
                 onMarkPickedUp={markOpportunityPickedUp}
                 onToggleAvailability={toggleAgentAvailability}
@@ -464,7 +495,7 @@ export default function App() {
             ) : null}
             {activeTab === "admin" ? (
               <AdminScreen
-                onBack={() => setActiveTab("profile")}
+                onBack={() => changeActiveTab("profile")}
                 onWalletRefresh={refreshWallets}
                 onWalletWithdraw={(amountNaira) => withdrawFromWallet("admin", amountNaira)}
                 wallet={wallets.admin}
@@ -472,7 +503,7 @@ export default function App() {
             ) : null}
           </ScrollView>
         )}
-        {!isRoleDashboard ? <BottomNav activeTab={activeTab} onChange={setActiveTab} /> : null}
+        {!isRoleDashboard ? <BottomNav activeTab={activeTab} onChange={changeActiveTab} /> : null}
         {isRoleDashboard ? (
           <View style={styles.roleNavWrap}>
             <RoleDashboardNav
@@ -482,20 +513,20 @@ export default function App() {
                       { active: true, icon: "grid", label: "Home" },
                       { icon: "receipt", label: "Orders" },
                       { icon: "fast-food", label: "Products" },
-                      { icon: "person", label: "Profile", onPress: () => setActiveTab("profile") }
+                      { icon: "person", label: "Profile", onPress: () => changeActiveTab("profile") }
                     ]
                   : activeTab === "agent"
                     ? [
                         { active: true, icon: "grid", label: "Home" },
                         { icon: "car", label: "Orders" },
                         { icon: "cash", label: "Earnings" },
-                        { icon: "person", label: "Profile", onPress: () => setActiveTab("profile") }
+                        { icon: "person", label: "Profile", onPress: () => changeActiveTab("profile") }
                       ]
                     : [
                         { active: true, icon: "grid", label: "Home" },
                         { icon: "checkmark-done", label: "Queue" },
                         { icon: "warning", label: "Audit" },
-                        { icon: "person", label: "Profile", onPress: () => setActiveTab("profile") }
+                        { icon: "person", label: "Profile", onPress: () => changeActiveTab("profile") }
                       ]
               }
             />

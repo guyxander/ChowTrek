@@ -21,7 +21,8 @@ import {
 } from "../repositories/roleOnboardingRepository";
 import { requestPushNotificationPermission } from "../repositories/notificationRepository";
 import { colors } from "../theme/colors";
-import { NotificationPreference, TabKey } from "../types/domain";
+import { NotificationPreference, TabKey, WalletSummary } from "../types/domain";
+import { formatNaira } from "../utils/money";
 
 const profileImage =
   "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80";
@@ -52,14 +53,18 @@ const legalLinks = [
 
 type Props = {
   onOpenRole: (tab: TabKey) => void;
+  onOpenWallet: () => void;
   notificationPreferences: NotificationPreference[];
   onToggleNotification: (preferenceId: string) => void;
+  wallet: WalletSummary;
 };
 
 export function ProfileScreen({
   notificationPreferences,
   onOpenRole,
-  onToggleNotification
+  onOpenWallet,
+  onToggleNotification,
+  wallet
 }: Props) {
   const [message, setMessage] = useState("Sign in to sync your ChowTrek profile.");
   const [isSending, setIsSending] = useState(false);
@@ -160,7 +165,12 @@ export function ProfileScreen({
       <View style={styles.bentoGrid}>
         <BentoAction icon="heart" label="My Favorites" tone="green" />
         <BentoAction icon="location" label="Addresses" tone="orange" />
-        <BentoAction icon="card" label="Payments" tone="green" />
+        <BentoAction
+          icon="wallet"
+          label={`Wallet ${formatNaira(wallet.availableBalanceNaira)}`}
+          tone="green"
+          onPress={onOpenWallet}
+        />
         <BentoAction icon="notifications" label="Notifications" tone="orange" onPress={handlePushPermission} />
       </View>
 
@@ -201,6 +211,7 @@ export function ProfileScreen({
       </ScrollView>
 
       <View style={styles.menuCard}>
+        <MenuRow icon="wallet-outline" label="Wallet" onPress={onOpenWallet} />
         <MenuRow icon="settings-outline" label="Settings" />
         <MenuRow icon="help-circle-outline" label="Help & Support" />
         <MenuRow icon="people-outline" label="Invite Friends" />
