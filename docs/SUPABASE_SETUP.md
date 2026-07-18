@@ -73,6 +73,7 @@ Connected project discovered through the Supabase app:
    - `docs/supabase_production_hardening_patch.sql`
    - `docs/supabase_wallet_patch.sql`
    - `docs/supabase_quickteller_payment_patch.sql`
+   - `docs/supabase_quickteller_verification_patch.sql`
    - `docs/supabase_foreign_key_indexes_patch.sql`
    - `docs/supabase_profile_completion_patch.sql`
 
@@ -98,9 +99,17 @@ Connected project discovered through the Supabase app:
    EXPO_PUBLIC_QUICKTELLER_CURRENCY_CODE=566
    ```
 
+   Add these server-only variables to Vercel Production. Do not add them to the mobile app bundle:
+
+   ```bash
+   SUPABASE_SERVICE_ROLE_KEY=...
+   QUICKTELLER_MODE=TEST
+   QUICKTELLER_MERCHANT_CODE=...
+   ```
+
    The mobile app creates a pending transaction and opens the hosted ChowTrek checkout bridge with
-   Quickteller parameters. A webhook/server-side verifier must mark the transaction/order paid before
-   production value is released.
+   Quickteller parameters. The Vercel `/api/quickteller-verify` endpoint confirms the payment with
+   Interswitch before calling the service-role-only Supabase settlement function.
 
 ## App Behavior
 
