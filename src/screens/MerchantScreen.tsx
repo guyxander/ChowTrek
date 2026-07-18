@@ -7,7 +7,7 @@ import { SectionHeader } from "../components/SectionHeader";
 import { StatusBadge } from "../components/StatusBadge";
 import { WalletPanel } from "../components/WalletPanel";
 import { commerceRepository } from "../repositories/commerceRepository";
-import { uploadMerchantProductImage } from "../repositories/merchantProductRepository";
+import { loadMerchantStorefront, uploadMerchantProductImage } from "../repositories/merchantProductRepository";
 import {
   loadProfileCompletion,
   saveProfilePhone,
@@ -28,6 +28,7 @@ declare const require: (moduleName: "expo-image-picker") => typeof ExpoImagePick
 
 type Props = {
   activeSection: MerchantDashboardSection;
+  dataNotice: string;
   onBack: () => void;
   orders: Order[];
   products: Product[];
@@ -42,6 +43,7 @@ type Props = {
 
 export function MerchantScreen({
   activeSection,
+  dataNotice,
   onBack,
   onCreateProduct,
   onCycleProductStatus,
@@ -69,6 +71,13 @@ export function MerchantScreen({
   const priceNaira = Number(productPrice);
 
   useEffect(() => {
+    loadMerchantStorefront().then((result) => {
+      if (result.ok) {
+        setStoreName(result.businessName);
+        setStoreArea(result.neighborhood);
+      }
+    });
+
     loadProfileCompletion().then((result) => {
       if (!result.ok) {
         setVerificationMessage(result.message);
@@ -157,6 +166,7 @@ export function MerchantScreen({
           Storefront, product media, availability, order queue, handover, and analytics.
         </Text>
       </View>
+      <Text style={styles.dashboardNotice}>{dataNotice}</Text>
       {activeSection === "home" ? (
         <>
           <WalletPanel
@@ -181,10 +191,13 @@ export function MerchantScreen({
           </View>
         </>
       ) : null}
-      {activeSection === "products" ? (
+      {activeSection === "profile" ? (
         <>
           <View style={sharedStyles.card}>
             <Text style={sharedStyles.cardTitle}>Storefront profile</Text>
+            <Text style={sharedStyles.bodyCopy}>
+              These public details are what buyers see on ChowTrek.
+            </Text>
             <TextInput
               onChangeText={setStoreName}
               placeholder="Store name"
@@ -212,41 +225,19 @@ export function MerchantScreen({
               <Text style={styles.statusButtonText}>Save storefront profile</Text>
             </TouchableOpacity>
           </View>
-          <View style={sharedStyles.card}>
-            <View style={styles.requirementHeader}>
-              <Ionicons color={colors.deepGreen} name="shield-checkmark-outline" size={20} />
-              <Text style={sharedStyles.cardTitle}>Merchant verification</Text>
-            </View>
-            <Text style={sharedStyles.bodyCopy}>
-              Save your merchant phone and private shop address here. Buyers cannot see the shop verification address; it is only for ChowTrek review.
-            </Text>
-            <TextInput
-              keyboardType="phone-pad"
-              onChangeText={setPhoneNumber}
-              placeholder="Merchant phone number"
-              placeholderTextColor={colors.muted}
-              style={styles.input}
-              value={phoneNumber}
-            />
-            <TextInput
-              multiline
-              onChangeText={setVerificationAddress}
-              placeholder="Shop number, street, city"
-              placeholderTextColor={colors.muted}
-              style={[styles.input, styles.multilineInput]}
-              value={verificationAddress}
-            />
-            <TouchableOpacity
-              disabled={isSavingVerification}
-              onPress={handleSaveVerificationAddress}
-              style={[styles.statusButton, isSavingVerification ? styles.disabledButton : null]}
-            >
-              <Text style={styles.statusButtonText}>
-                {isSavingVerification ? "Saving..." : "Save merchant verification"}
-              </Text>
-            </TouchableOpacity>
-            <Text style={styles.imageMeta}>{verificationMessage}</Text>
-          </View>
+          <MerchantVerificationCard
+            isSavingVerification={isSavingVerification}
+            onSave={handleSaveVerificationAddress}
+            phoneNumber={phoneNumber}
+            setPhoneNumber={setPhoneNumber}
+            setVerificationAddress={setVerificationAddress}
+            verificationAddress={verificationAddress}
+            verificationMessage={verificationMessage}
+          />
+        </>
+      ) : null}
+      {activeSection === "products" ? (
+        <>
           <View style={sharedStyles.card}>
             <Text style={sharedStyles.cardTitle}>Add product</Text>
             <TextInput
@@ -360,11 +351,73 @@ export function MerchantScreen({
   );
 }
 
+function MerchantVerificationCard({
+  isSavingVerification,
+  onSave,
+  phoneNumber,
+  setPhoneNumber,
+  setVerificationAddress,
+  verificationAddress,
+  verificationMessage
+}: {
+  isSavingVerification: boolean;
+  onSave: () => void;
+  phoneNumber: string;
+  setPhoneNumber: (phone: string) => void;
+  setVerificationAddress: (address: string) => void;
+  verificationAddress: string;
+  verificationMessage: string;
+}) {
+  return (
+    <View style={sharedStyles.card}>
+      <View style={styles.requirementHeader}>
+        <Ionicons color={colors.deepGreen} name="shield-checkmark-outline" size={20} />
+        <Text style={sharedStyles.cardTitle}>Merchant verification</Text>
+      </View>
+      <Text style={sharedStyles.bodyCopy}>
+        Save your merchant phone and private shop address here. Buyers cannot see the shop verification address; it is only for ChowTrek review.
+      </Text>
+      <TextInput
+        keyboardType="phone-pad"
+        onChangeText={setPhoneNumber}
+        placeholder="Merchant phone number"
+        placeholderTextColor={colors.muted}
+        style={styles.input}
+        value={phoneNumber}
+      />
+      <TextInput
+        multiline
+        onChangeText={setVerificationAddress}
+        placeholder="Shop number, street, city"
+        placeholderTextColor={colors.muted}
+        style={[styles.input, styles.multilineInput]}
+        value={verificationAddress}
+      />
+      <TouchableOpacity
+        disabled={isSavingVerification}
+        onPress={onSave}
+        style={[styles.statusButton, isSavingVerification ? styles.disabledButton : null]}
+      >
+        <Text style={styles.statusButtonText}>
+          {isSavingVerification ? "Saving..." : "Save merchant verification"}
+        </Text>
+      </TouchableOpacity>
+      <Text style={styles.imageMeta}>{verificationMessage}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   dashboardTitle: {
     color: colors.deepGreen,
     fontSize: 20,
     fontWeight: "900"
+  },
+  dashboardNotice: {
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: "800",
+    marginTop: 10
   },
   heroCard: {
     backgroundColor: colors.greenContainer,

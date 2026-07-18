@@ -805,6 +805,7 @@ export default function App() {
             {activeTab === "merchant" ? (
               <MerchantScreen
                 activeSection={merchantSection}
+                dataNotice={dataNotice}
                 onCreateProduct={addMerchantProduct}
                 onBack={goBack}
                 onCycleProductStatus={cycleProductStatus}
@@ -873,7 +874,12 @@ export default function App() {
                         label: "Products",
                         onPress: () => setMerchantSection("products")
                       },
-                      { icon: "person", label: "Profile", onPress: () => changeActiveTab("profile") }
+                      {
+                        active: merchantSection === "profile",
+                        icon: "person",
+                        label: "Profile",
+                        onPress: () => setMerchantSection("profile")
+                      }
                     ]
                   : activeTab === "agent"
                     ? [
@@ -895,7 +901,12 @@ export default function App() {
                           label: "Earnings",
                           onPress: () => setAgentSection("earnings")
                         },
-                        { icon: "person", label: "Profile", onPress: () => changeActiveTab("profile") }
+                        {
+                          active: agentSection === "profile",
+                          icon: "person",
+                          label: "Profile",
+                          onPress: () => setAgentSection("profile")
+                        }
                       ]
                     : [
                         {

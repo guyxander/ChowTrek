@@ -17,6 +17,17 @@ export type MerchantUploadResult =
       message: string;
     };
 
+export type MerchantStorefrontResult =
+  | {
+      ok: true;
+      businessName: string;
+      neighborhood: string;
+    }
+  | {
+      ok: false;
+      message: string;
+    };
+
 export async function createMerchantProduct(
   name: string,
   priceNaira: number,
@@ -134,12 +145,6 @@ export async function updateMerchantStorefront(
     return { ok: false, message: "Sign in with Google before updating your storefront." };
   }
 
-  const completion = await requireMerchantCanReceiveOrders(user.id);
-
-  if (!completion.ok) {
-    return completion;
-  }
-
   const result = await supabase
     .from("merchant_profiles")
     .update({
@@ -159,6 +164,45 @@ export async function updateMerchantStorefront(
   }
 
   return { ok: true, message: "Storefront profile synced to Supabase." };
+}
+
+export async function loadMerchantStorefront(): Promise<MerchantStorefrontResult> {
+  if (!supabase) {
+    return { ok: false, message: "Supabase is not configured for storefront lookup." };
+  }
+
+  const {
+    data: { user },
+    error: userError
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    return { ok: false, message: `Session lookup failed: ${userError.message}` };
+  }
+
+  if (!user) {
+    return { ok: false, message: "Sign in with Google before loading your storefront." };
+  }
+
+  const result = await supabase
+    .from("merchant_profiles")
+    .select("business_name,neighborhood")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+
+  if (result.error) {
+    return { ok: false, message: `Storefront lookup failed: ${result.error.message}` };
+  }
+
+  if (!result.data) {
+    return { ok: false, message: "Activate a merchant profile before loading storefront details." };
+  }
+
+  return {
+    ok: true,
+    businessName: result.data.business_name ?? "",
+    neighborhood: result.data.neighborhood ?? ""
+  };
 }
 
 export async function uploadMerchantProductImage(

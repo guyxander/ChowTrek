@@ -228,6 +228,52 @@ export function AgentScreen({
         </>
       ) : null}
 
+      {activeSection === "profile" ? (
+        <>
+          <WalletPanel
+            onRefresh={onWalletRefresh}
+            onWithdraw={onWalletWithdraw}
+            title="Delivery payouts"
+            wallet={wallet}
+          />
+          <View style={styles.verificationCard}>
+            <View style={styles.verificationHeader}>
+              <Ionicons color={colors.deepGreen} name="shield-checkmark-outline" size={20} />
+              <Text style={styles.verificationTitle}>Delivery verification</Text>
+            </View>
+            <Text style={styles.verificationCopy}>
+              Save your delivery phone and private home address here. It is visible only to ChowTrek admins for delivery agent review.
+            </Text>
+            <TextInput
+              keyboardType="phone-pad"
+              onChangeText={setPhoneNumber}
+              placeholder="Delivery phone number"
+              placeholderTextColor={colors.muted}
+              style={styles.verificationPhoneInput}
+              value={phoneNumber}
+            />
+            <TextInput
+              multiline
+              onChangeText={setVerificationAddress}
+              placeholder="House number, street, city"
+              placeholderTextColor={colors.muted}
+              style={styles.verificationInput}
+              value={verificationAddress}
+            />
+            <TouchableOpacity
+              disabled={isSavingVerification}
+              onPress={handleSaveVerificationAddress}
+              style={[styles.verificationButton, isSavingVerification ? styles.disabledAction : null]}
+            >
+              <Text style={styles.verificationButtonText}>
+                {isSavingVerification ? "Saving..." : "Save delivery verification"}
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.verificationMessage}>{verificationMessage}</Text>
+          </View>
+        </>
+      ) : null}
+
       {activeSection === "orders" ? (
         <>
           <Text style={styles.sectionTitle}>Delivery Queue</Text>

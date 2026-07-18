@@ -85,8 +85,8 @@ export type CartItem = {
 
 export type PaymentMode = "Pay with card" | "Pay on Delivery" | "Wallet";
 export type WalletRole = "customer" | "merchant" | "agent" | "admin";
-export type MerchantDashboardSection = "home" | "orders" | "products";
-export type AgentDashboardSection = "home" | "orders" | "earnings";
+export type MerchantDashboardSection = "home" | "orders" | "products" | "profile";
+export type AgentDashboardSection = "home" | "orders" | "earnings" | "profile";
 export type AdminDashboardSection = "home" | "queue" | "audit";
 
 export type WalletLedgerEntry = {
