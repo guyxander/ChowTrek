@@ -217,7 +217,7 @@ export async function requestWalletTopUp(
     wallet_id: walletId,
     user_id: user.id,
     amount_naira: amountNaira,
-    provider: "flutterwave",
+    provider: "quickteller",
     provider_reference: providerReference,
     status: "pending"
   });
@@ -228,7 +228,7 @@ export async function requestWalletTopUp(
 
   return {
     ok: true,
-    message: "Wallet top-up request created. Complete payment in Flutterwave.",
+    message: "Wallet top-up request created. Complete payment with your card.",
     reference: providerReference
   };
 }

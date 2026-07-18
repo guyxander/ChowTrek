@@ -72,6 +72,7 @@ Connected project discovered through the Supabase app:
    - `docs/supabase_delivery_stage_patch.sql`
    - `docs/supabase_production_hardening_patch.sql`
    - `docs/supabase_wallet_patch.sql`
+   - `docs/supabase_quickteller_payment_patch.sql`
    - `docs/supabase_foreign_key_indexes_patch.sql`
    - `docs/supabase_profile_completion_patch.sql`
 
@@ -88,14 +89,18 @@ Connected project discovered through the Supabase app:
    { "roles": ["admin"] }
    ```
 
-9. For Flutterwave, configure a hosted payment URL in `.env.local`:
+9. For Quickteller/Interswitch test card payments, configure the public checkout credentials in `.env.local`:
 
    ```bash
-   EXPO_PUBLIC_FLUTTERWAVE_PAYMENT_URL=https://your-flutterwave-payment-link
+   EXPO_PUBLIC_QUICKTELLER_MODE=TEST
+   EXPO_PUBLIC_QUICKTELLER_MERCHANT_CODE=...
+   EXPO_PUBLIC_QUICKTELLER_PAY_ITEM_ID=...
+   EXPO_PUBLIC_QUICKTELLER_CURRENCY_CODE=566
    ```
 
-   The mobile app creates a pending transaction and opens this URL with `tx_ref`, `amount`, and
-   `currency=NGN`. A webhook/server-side verifier should later mark the transaction/order paid.
+   The mobile app creates a pending transaction and opens the hosted ChowTrek checkout bridge with
+   Quickteller parameters. A webhook/server-side verifier must mark the transaction/order paid before
+   production value is released.
 
 ## App Behavior
 

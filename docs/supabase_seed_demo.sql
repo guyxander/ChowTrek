@@ -308,7 +308,7 @@ values
     '55555555-5555-4555-8555-555555555551',
     'placed',
     'trek_delivery',
-    'flutterwave',
+    'quickteller',
     4100,
     800,
     4900,

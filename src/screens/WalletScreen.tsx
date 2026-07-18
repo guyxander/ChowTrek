@@ -36,9 +36,9 @@ export function WalletScreen({ onAddMoney, onBack, onRefresh, wallet }: Props) {
       <WalletPanel onAddMoney={() => onAddMoney(amountNaira)} onRefresh={onRefresh} title="ChowTrek Wallet" wallet={wallet} />
 
       <View style={styles.topUpCard}>
-        <Text style={styles.topUpTitle}>Top up with Flutterwave</Text>
+        <Text style={styles.topUpTitle}>Top up with card</Text>
         <Text style={styles.topUpCopy}>
-          Enter an amount, then complete payment in Flutterwave. Your top-up is recorded as pending until payment is verified.
+          Enter an amount, then complete payment by card. Your top-up is recorded as pending until payment is verified.
         </Text>
         <View style={styles.amountRow}>
           <Text style={styles.amountPrefix}>NGN</Text>
@@ -53,7 +53,7 @@ export function WalletScreen({ onAddMoney, onBack, onRefresh, wallet }: Props) {
         </View>
         <TouchableOpacity onPress={submitTopUp} style={styles.topUpButton}>
           <Ionicons color="#ffffff" name="card-outline" size={18} />
-          <Text style={styles.topUpButtonText}>Continue to Flutterwave</Text>
+          <Text style={styles.topUpButtonText}>Pay with card</Text>
         </TouchableOpacity>
       </View>
 

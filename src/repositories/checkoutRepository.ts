@@ -1,5 +1,12 @@
 import { supabase } from "../lib/supabase";
-import { flutterwavePaymentUrl, isFlutterwaveConfigured } from "../lib/productionConfig";
+import {
+  isQuicktellerConfigured,
+  quicktellerCheckoutBridgeUrl,
+  quicktellerCurrencyCode,
+  quicktellerMerchantCode,
+  quicktellerMode,
+  quicktellerPayItemId
+} from "../lib/productionConfig";
 import { CartItem, FulfilmentMode, PaymentMode } from "../types/domain";
 import {
   requireBuyerCanCheckout,
@@ -88,13 +95,13 @@ export async function createCheckoutOrder(
 
   const paymentReference = `CHOW-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
   const normalizedPaymentMode =
-    paymentMode === "Flutterwave"
-      ? "flutterwave"
+    paymentMode === "Pay with card"
+      ? "quickteller"
       : paymentMode === "Wallet"
         ? "wallet"
         : "pay_on_delivery";
   const paymentStatus =
-    paymentMode === "Flutterwave" ? "pending" : paymentMode === "Wallet" ? "pending" : "pay_on_delivery";
+    paymentMode === "Pay with card" ? "pending" : paymentMode === "Wallet" ? "pending" : "pay_on_delivery";
 
   if (paymentMode === "Wallet") {
     const walletResult = await supabase
@@ -194,17 +201,17 @@ export async function createCheckoutOrder(
   }
 
   const paymentUrl =
-    paymentMode === "Flutterwave" && isFlutterwaveConfigured
-      ? buildFlutterwaveUrl(paymentReference, totalNaira)
+    paymentMode === "Pay with card" && isQuicktellerConfigured
+      ? buildQuicktellerCheckoutUrl(paymentReference, totalNaira, orderId, user.email ?? "customer@chowtrek.app")
       : undefined;
 
   return {
     ok: true,
     message:
-      paymentMode === "Flutterwave"
+      paymentMode === "Pay with card"
         ? paymentUrl
-          ? `Order #${orderId.slice(0, 8).toUpperCase()} placed. Complete Flutterwave payment with reference ${paymentReference}.`
-          : `Order #${orderId.slice(0, 8).toUpperCase()} placed as pending. Configure Flutterwave payment URL to collect online payment.`
+          ? `Order #${orderId.slice(0, 8).toUpperCase()} placed. Complete card payment with reference ${paymentReference}.`
+          : `Order #${orderId.slice(0, 8).toUpperCase()} placed as pending. Add card payment test credentials to collect card payments.`
         : paymentMode === "Wallet"
           ? `Order #${orderId.slice(0, 8).toUpperCase()} paid from ChowTrek Wallet for ${fulfilmentMode}.`
           : `Order #${orderId.slice(0, 8).toUpperCase()} placed for ${fulfilmentMode.toLowerCase()} with pay on delivery.`,
@@ -217,11 +224,18 @@ function formatInlineNaira(amountNaira: number): string {
   return `₦${amountNaira.toLocaleString("en-NG")}`;
 }
 
-function buildFlutterwaveUrl(reference: string, amountNaira: number): string {
-  const url = new URL(flutterwavePaymentUrl);
-  url.searchParams.set("tx_ref", reference);
-  url.searchParams.set("amount", String(amountNaira));
-  url.searchParams.set("currency", "NGN");
+function buildQuicktellerCheckoutUrl(reference: string, amountNaira: number, orderId: string, customerEmail: string): string {
+  const url = new URL(quicktellerCheckoutBridgeUrl);
+  url.searchParams.set("merchant_code", quicktellerMerchantCode);
+  url.searchParams.set("pay_item_id", quicktellerPayItemId);
+  url.searchParams.set("txn_ref", reference);
+  url.searchParams.set("amount", String(amountNaira * 100));
+  url.searchParams.set("currency", quicktellerCurrencyCode);
+  url.searchParams.set("mode", quicktellerMode);
+  url.searchParams.set("cust_email", customerEmail);
+  url.searchParams.set("cust_id", orderId);
+  url.searchParams.set("pay_item_name", "ChowTrek order");
+  url.searchParams.set("site_redirect_url", "https://chowtrek-landing.vercel.app/payment-return/");
 
   return url.toString();
 }

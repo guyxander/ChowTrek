@@ -20,7 +20,7 @@ This file supersedes the original Flutter-only implementation guardrail.
 - Wallet is optional at checkout. Customers can pay from ChowTrek Wallet after the wallet schema patch is applied.
 - Merchant, delivery, and admin dashboards include role wallets for accrued ChowTrek balances and withdrawal requests.
 - No loyalty system, gamification, Firebase, Stripe, or undefined social features.
-- Flutterwave remains the payment provider for online payments.
+- Quickteller/Interswitch is the payment provider for online card payments, shown in-app as "Pay with card".
 - Supabase service-role keys must never be shipped in the mobile client.
 
 ## Architecture Direction

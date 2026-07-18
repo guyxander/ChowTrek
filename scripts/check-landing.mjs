@@ -6,6 +6,8 @@ const requiredFiles = [
   'public/index.html',
   'public/privacy/index.html',
   'public/terms/index.html',
+  'public/quickteller-checkout/index.html',
+  'public/payment-return/index.html',
   'public/assets/styles.css',
   'public/assets/site.js',
   'api/download.js',
@@ -31,6 +33,7 @@ if (apkSize < 10_000_000) {
 }
 
 const home = readFileSync(join(root, 'public/index.html'), 'utf8');
+const checkout = readFileSync(join(root, 'public/quickteller-checkout/index.html'), 'utf8');
 const requiredHomeContent = [
   'Download APK',
   'data-download-count',
@@ -42,6 +45,12 @@ const requiredHomeContent = [
 for (const marker of requiredHomeContent) {
   if (!home.includes(marker)) {
     throw new Error(`Landing page missing required marker: ${marker}`);
+  }
+}
+
+for (const marker of ['sandbox.interswitchng.com/collections/w/pay', 'newwebpay.interswitchng.com/collections/w/pay', 'merchant_code', 'pay_item_id']) {
+  if (!checkout.includes(marker)) {
+    throw new Error(`Quickteller checkout bridge missing required marker: ${marker}`);
   }
 }
 

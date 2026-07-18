@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pay with card - ChowTrek</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <style>
+      .checkout-shell {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      .checkout-panel {
+        width: min(460px, 100%);
+        border: 1px solid rgba(191, 201, 195, 0.35);
+        border-radius: 14px;
+        background: #ffffff;
+        padding: 24px;
+        box-shadow: 0 22px 60px rgba(9, 47, 35, 0.12);
+      }
+
+      .checkout-panel h1 {
+        margin: 12px 0 8px;
+        font-size: 28px;
+      }
+
+      .checkout-panel p {
+        color: #5f6f68;
+        line-height: 1.55;
+      }
+
+      .pay-button {
+        width: 100%;
+        border: 0;
+        border-radius: 10px;
+        background: #f47a1f;
+        color: #ffffff;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 900;
+        margin-top: 16px;
+        padding: 14px 18px;
+      }
+
+      .error {
+        color: #b3261e;
+        font-weight: 800;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="checkout-shell">
+      <section class="checkout-panel">
+        <a class="brand" href="/">
+          <img class="brand-mark" src="/assets/chowtrek-logo.png" alt="" />
+          <span>ChowTrek</span>
+        </a>
+        <h1>Pay with card</h1>
+        <p data-copy>Preparing your secure Quickteller checkout.</p>
+        <form id="quickteller-form" method="post">
+          <input type="hidden" name="merchant_code" />
+          <input type="hidden" name="pay_item_id" />
+          <input type="hidden" name="txn_ref" />
+          <input type="hidden" name="amount" />
+          <input type="hidden" name="currency" />
+          <input type="hidden" name="cust_email" />
+          <input type="hidden" name="cust_id" />
+          <input type="hidden" name="pay_item_name" />
+          <input type="hidden" name="site_redirect_url" />
+          <button class="pay-button" type="submit">Continue to card payment</button>
+        </form>
+      </section>
+    </main>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const requiredFields = [
+        "merchant_code",
+        "pay_item_id",
+        "txn_ref",
+        "amount",
+        "currency",
+        "cust_email",
+        "cust_id",
+        "pay_item_name",
+        "site_redirect_url"
+      ];
+      const form = document.querySelector("#quickteller-form");
+      const copy = document.querySelector("[data-copy]");
+      const mode = (params.get("mode") || "TEST").toUpperCase();
+      const endpoint =
+        mode === "LIVE"
+          ? "https://newwebpay.interswitchng.com/collections/w/pay"
+          : "https://sandbox.interswitchng.com/collections/w/pay";
+      const missing = requiredFields.filter((field) => !params.get(field));
+
+      if (missing.length) {
+        copy.className = "error";
+        copy.textContent = "Missing checkout details. Please return to ChowTrek and try again.";
+        form.hidden = true;
+      } else {
+        form.action = endpoint;
+        for (const field of requiredFields) {
+          form.elements[field].value = params.get(field);
+        }
+        copy.textContent = "You are being redirected to secure card payment.";
+        window.setTimeout(() => form.requestSubmit(), 750);
+      }
+    </script>
+  </body>
+</html>

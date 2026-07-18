@@ -67,7 +67,7 @@ export function CartSummary({ items, onQuantityChange, paymentMode }: Props) {
         <Text style={styles.totalLabel}>Total</Text>
         <Text style={styles.totalAmount}>{formatNaira(total)}</Text>
       </View>
-      <Text style={styles.noWallet}>Wallet, Flutterwave, and pay-on-delivery are available at checkout.</Text>
+      <Text style={styles.noWallet}>Wallet, card, and pay-on-delivery are available at checkout.</Text>
     </View>
   );
 }

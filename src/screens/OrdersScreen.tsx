@@ -197,7 +197,7 @@ function CartTab({
   return (
     <View>
       <View style={styles.paymentToggle}>
-        {(["Wallet", "Flutterwave", "Pay on Delivery"] as PaymentMode[]).map((mode) => (
+        {(["Wallet", "Pay with card", "Pay on Delivery"] as PaymentMode[]).map((mode) => (
           <TouchableOpacity
             key={mode}
             onPress={() => onPaymentModeChange(mode)}
@@ -317,7 +317,7 @@ function CartTab({
                 </View>
                 {!hasAvailableFulfilment ? (
                   <Text style={styles.fulfilmentHelp}>
-                    Pickup is not available with Pay on Delivery. Choose Wallet or Flutterwave for
+                    Pickup is not available with Pay on Delivery. Choose Wallet or Pay with card for
                     pickup carts.
                   </Text>
                 ) : null}

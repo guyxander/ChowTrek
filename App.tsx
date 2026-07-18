@@ -51,7 +51,14 @@ import {
   requestWalletTopUp,
   requestWalletWithdrawal
 } from "./src/repositories/walletRepository";
-import { flutterwavePaymentUrl, isFlutterwaveConfigured } from "./src/lib/productionConfig";
+import {
+  isQuicktellerConfigured,
+  quicktellerCheckoutBridgeUrl,
+  quicktellerCurrencyCode,
+  quicktellerMerchantCode,
+  quicktellerMode,
+  quicktellerPayItemId
+} from "./src/lib/productionConfig";
 import {
   syncAgentAvailability,
   syncDeliveryClaim,
@@ -141,7 +148,7 @@ export default function App() {
     mergeNotificationPreferences(initialSnapshot.notificationPreferences)
   );
   const [dataNotice, setDataNotice] = useState(initialSnapshot.warning ?? "Loading ChowTrek data...");
-  const [paymentMode, setPaymentMode] = useState<PaymentMode>("Flutterwave");
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>("Pay with card");
   const [wallets, setWallets] = useState<Record<WalletRole, WalletSummary>>(initialWallets);
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>(fallbackAddresses);
   const [isAgentAvailable, setIsAgentAvailable] = useState(true);
@@ -307,8 +314,8 @@ export default function App() {
       return;
     }
 
-    if (!isFlutterwaveConfigured) {
-      setDataNotice("Add EXPO_PUBLIC_FLUTTERWAVE_PAYMENT_URL to .env.local to collect Flutterwave payments.");
+    if (!isQuicktellerConfigured) {
+      setDataNotice("Add card payment test credentials to .env.local to collect card payments.");
       return;
     }
 
@@ -320,7 +327,7 @@ export default function App() {
       return;
     }
 
-    await Linking.openURL(buildFlutterwaveUrl(reference, amountNaira, "wallet_top_up"));
+    await Linking.openURL(buildQuicktellerUrl(reference, amountNaira, "wallet_top_up"));
   }
 
   function openCustomerWallet() {
@@ -985,12 +992,18 @@ function mergeNotificationPreferences(
   }));
 }
 
-function buildFlutterwaveUrl(reference: string, amountNaira: number, purpose: string): string {
-  const url = new URL(flutterwavePaymentUrl);
-  url.searchParams.set("tx_ref", reference);
-  url.searchParams.set("amount", String(amountNaira));
-  url.searchParams.set("currency", "NGN");
-  url.searchParams.set("meta_purpose", purpose);
+function buildQuicktellerUrl(reference: string, amountNaira: number, purpose: string): string {
+  const url = new URL(quicktellerCheckoutBridgeUrl);
+  url.searchParams.set("merchant_code", quicktellerMerchantCode);
+  url.searchParams.set("pay_item_id", quicktellerPayItemId);
+  url.searchParams.set("txn_ref", reference);
+  url.searchParams.set("amount", String(amountNaira * 100));
+  url.searchParams.set("currency", quicktellerCurrencyCode);
+  url.searchParams.set("mode", quicktellerMode);
+  url.searchParams.set("cust_email", "customer@chowtrek.app");
+  url.searchParams.set("cust_id", purpose);
+  url.searchParams.set("pay_item_name", "ChowTrek wallet top-up");
+  url.searchParams.set("site_redirect_url", "https://chowtrek-landing.vercel.app/payment-return/");
 
   return url.toString();
 }

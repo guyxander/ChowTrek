@@ -91,10 +91,10 @@ export const activeOrders: Order[] = [
     fulfilmentMode: "Trek Delivery",
     etaMinutes: 12,
     totalNaira: 4200,
-    paymentMode: "Flutterwave",
+    paymentMode: "Pay with card",
     paymentStatus: "Authorized",
     paymentReference: "CHOW-DEMO-42A",
-    receiptLines: ["Jollof rice + beef x1", "Delivery fee", "Flutterwave authorized"]
+    receiptLines: ["Jollof rice + beef x1", "Delivery fee", "Card payment authorized"]
   },
   {
     id: "38C",

@@ -83,7 +83,7 @@ export type CartItem = {
   unitPriceNaira: number;
 };
 
-export type PaymentMode = "Flutterwave" | "Pay on Delivery" | "Wallet";
+export type PaymentMode = "Pay with card" | "Pay on Delivery" | "Wallet";
 export type WalletRole = "customer" | "merchant" | "agent" | "admin";
 export type MerchantDashboardSection = "home" | "orders" | "products";
 export type AgentDashboardSection = "home" | "orders" | "earnings";
