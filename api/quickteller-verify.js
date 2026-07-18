@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
   process.env.EXPO_PUBLIC_SUPABASE_URL ||
@@ -7,9 +9,9 @@ const QUICKTELLER_MODE =
   process.env.QUICKTELLER_MODE ||
   process.env.EXPO_PUBLIC_QUICKTELLER_MODE ||
   'TEST';
-const QUICKTELLER_MERCHANT_CODE =
-  process.env.QUICKTELLER_MERCHANT_CODE ||
-  process.env.EXPO_PUBLIC_QUICKTELLER_MERCHANT_CODE;
+const QUICKTELLER_CLIENT_ID = process.env.QUICKTELLER_CLIENT_ID;
+const QUICKTELLER_SECRET_KEY = process.env.QUICKTELLER_SECRET_KEY;
+const QUICKTELLER_QUERY_BASE_URL = process.env.QUICKTELLER_QUERY_BASE_URL;
 
 module.exports = async function handler(request, response) {
   response.setHeader('Access-Control-Allow-Origin', '*');
@@ -22,7 +24,7 @@ module.exports = async function handler(request, response) {
     return;
   }
 
-  if (!SUPABASE_SERVICE_ROLE_KEY || !QUICKTELLER_MERCHANT_CODE) {
+  if (!SUPABASE_SERVICE_ROLE_KEY || !QUICKTELLER_CLIENT_ID || !QUICKTELLER_SECRET_KEY) {
     response.status(503).json({
       ok: false,
       message: 'Card payment verification is not configured on the server.'
@@ -175,19 +177,25 @@ async function findLocalPayment(reference) {
 
 async function verifyWithInterswitch(reference, amountKobo) {
   const baseUrl =
-    String(QUICKTELLER_MODE).toUpperCase() === 'LIVE'
-      ? 'https://webpay.interswitchng.com'
-      : 'https://qa.interswitchng.com';
-  const url = new URL('/collections/api/v1/gettransaction.json', baseUrl);
-  url.searchParams.set('merchantcode', QUICKTELLER_MERCHANT_CODE);
-  url.searchParams.set('transactionreference', reference);
-  url.searchParams.set('amount', String(amountKobo));
+    QUICKTELLER_QUERY_BASE_URL ||
+    (String(QUICKTELLER_MODE).toUpperCase() === 'LIVE'
+      ? 'https://pwq.interswitchng.com'
+      : 'https://pwq.sandbox.interswitchng.com');
+  const url = new URL(`/api/v2/transaction/${encodeURIComponent(reference)}`, baseUrl);
+  url.searchParams.set('isRequestRef', 'true');
+  const hash = crypto
+    .createHash('sha512')
+    .update(`${reference}${QUICKTELLER_SECRET_KEY}`)
+    .digest('hex')
+    .toUpperCase();
 
   const verificationResponse = await fetch(url, {
     method: 'GET',
     headers: {
       Accept: 'application/json',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      clientid: QUICKTELLER_CLIENT_ID,
+      Hash: hash
     }
   });
   const verification = await readJson(verificationResponse);
@@ -198,6 +206,18 @@ async function verifyWithInterswitch(reference, amountKobo) {
         verification.message ||
         `Interswitch verification failed with HTTP ${verificationResponse.status}.`
     );
+  }
+
+  const verifiedAmount = Number(verification.Amount ?? verification.amount ?? 0);
+
+  if (Number.isFinite(verifiedAmount) && verifiedAmount !== amountKobo) {
+    return {
+      ...verification,
+      ResponseCode: verification.ResponseCode ?? verification.responseCode ?? 'AMOUNT_MISMATCH',
+      ResponseDescription:
+        verification.ResponseDescription ||
+        `Verified amount ${verifiedAmount} did not match expected amount ${amountKobo}.`
+    };
   }
 
   return verification;
