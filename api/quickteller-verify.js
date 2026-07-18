@@ -9,9 +9,13 @@ const QUICKTELLER_MODE =
   process.env.QUICKTELLER_MODE ||
   process.env.EXPO_PUBLIC_QUICKTELLER_MODE ||
   'TEST';
+const QUICKTELLER_MERCHANT_CODE =
+  process.env.QUICKTELLER_MERCHANT_CODE ||
+  process.env.EXPO_PUBLIC_QUICKTELLER_MERCHANT_CODE;
 const QUICKTELLER_CLIENT_ID = process.env.QUICKTELLER_CLIENT_ID;
 const QUICKTELLER_SECRET_KEY = process.env.QUICKTELLER_SECRET_KEY;
 const QUICKTELLER_QUERY_BASE_URL = process.env.QUICKTELLER_QUERY_BASE_URL;
+const QUICKTELLER_VERIFY_MODE = process.env.QUICKTELLER_VERIFY_MODE || 'WEB_CHECKOUT';
 
 module.exports = async function handler(request, response) {
   response.setHeader('Access-Control-Allow-Origin', '*');
@@ -24,7 +28,7 @@ module.exports = async function handler(request, response) {
     return;
   }
 
-  if (!SUPABASE_SERVICE_ROLE_KEY || !QUICKTELLER_CLIENT_ID || !QUICKTELLER_SECRET_KEY) {
+  if (!SUPABASE_SERVICE_ROLE_KEY || !hasVerificationConfig()) {
     response.status(503).json({
       ok: false,
       message: 'Card payment verification is not configured on the server.'
@@ -176,6 +180,45 @@ async function findLocalPayment(reference) {
 }
 
 async function verifyWithInterswitch(reference, amountKobo) {
+  if (String(QUICKTELLER_VERIFY_MODE).toUpperCase() === 'PWQ') {
+    return verifyWithSignedPwqQuery(reference, amountKobo);
+  }
+
+  return verifyWithWebCheckoutQuery(reference, amountKobo);
+}
+
+async function verifyWithWebCheckoutQuery(reference, amountKobo) {
+  const baseUrl =
+    QUICKTELLER_QUERY_BASE_URL ||
+    (String(QUICKTELLER_MODE).toUpperCase() === 'LIVE'
+      ? 'https://webpay.interswitchng.com'
+      : 'https://sandbox.interswitchng.com');
+  const url = new URL('/collections/api/v1/gettransaction.json', baseUrl);
+  url.searchParams.set('merchantcode', QUICKTELLER_MERCHANT_CODE);
+  url.searchParams.set('transactionreference', reference);
+  url.searchParams.set('amount', String(amountKobo));
+
+  const verificationResponse = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    }
+  });
+  const verification = await readJson(verificationResponse);
+
+  if (!verificationResponse.ok) {
+    throw new Error(
+      verification.ResponseDescription ||
+        verification.message ||
+        `Interswitch verification failed with HTTP ${verificationResponse.status}.`
+    );
+  }
+
+  return rejectAmountMismatch(verification, amountKobo);
+}
+
+async function verifyWithSignedPwqQuery(reference, amountKobo) {
   const baseUrl =
     QUICKTELLER_QUERY_BASE_URL ||
     (String(QUICKTELLER_MODE).toUpperCase() === 'LIVE'
@@ -208,6 +251,10 @@ async function verifyWithInterswitch(reference, amountKobo) {
     );
   }
 
+  return rejectAmountMismatch(verification, amountKobo);
+}
+
+function rejectAmountMismatch(verification, amountKobo) {
   const verifiedAmount = Number(verification.Amount ?? verification.amount ?? 0);
 
   if (Number.isFinite(verifiedAmount) && verifiedAmount !== amountKobo) {
@@ -221,6 +268,14 @@ async function verifyWithInterswitch(reference, amountKobo) {
   }
 
   return verification;
+}
+
+function hasVerificationConfig() {
+  if (String(QUICKTELLER_VERIFY_MODE).toUpperCase() === 'PWQ') {
+    return Boolean(QUICKTELLER_CLIENT_ID && QUICKTELLER_SECRET_KEY);
+  }
+
+  return Boolean(QUICKTELLER_MERCHANT_CODE);
 }
 
 async function callSettlementRpc(reference, providerPaymentReference) {

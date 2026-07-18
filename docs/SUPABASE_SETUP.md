@@ -105,17 +105,21 @@ Connected project discovered through the Supabase app:
    ```bash
    SUPABASE_SERVICE_ROLE_KEY=...
    QUICKTELLER_MODE=TEST
-   QUICKTELLER_CLIENT_ID=chowtrek-landing.vercel.app
-   QUICKTELLER_SECRET_KEY=...
+   QUICKTELLER_MERCHANT_CODE=...
    # Optional override if Interswitch gives you a different transaction-query URL:
-   # QUICKTELLER_QUERY_BASE_URL=https://pwq.sandbox.interswitchng.com
+   # QUICKTELLER_QUERY_BASE_URL=https://sandbox.interswitchng.com
+   #
+   # Optional only if Interswitch asks you to use the signed Pay with Quickteller query API:
+   # QUICKTELLER_VERIFY_MODE=PWQ
+   # QUICKTELLER_CLIENT_ID=chowtrek-landing.vercel.app
+   # QUICKTELLER_SECRET_KEY=...
    ```
 
    The mobile app creates a pending transaction and opens the hosted ChowTrek checkout bridge with
    Quickteller parameters. The Vercel `/api/quickteller-verify` endpoint confirms the payment with
-   Interswitch by querying the Pay with Quickteller transaction API with `clientid` and a SHA-512
-   hash of `transaction reference + secret key`, then calls the service-role-only Supabase
-   settlement function.
+   Interswitch Web Checkout by querying `collections/api/v1/gettransaction.json` with merchant code,
+   transaction reference, and expected amount, then calls the service-role-only Supabase settlement
+   function.
 
 ## App Behavior
 

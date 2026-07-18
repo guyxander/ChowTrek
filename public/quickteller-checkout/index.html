@@ -69,6 +69,8 @@
           <input type="hidden" name="currency" />
           <input type="hidden" name="cust_email" />
           <input type="hidden" name="cust_id" />
+          <input type="hidden" name="cust_name" />
+          <input type="hidden" name="display_mode" />
           <input type="hidden" name="pay_item_name" />
           <input type="hidden" name="site_redirect_url" />
           <button class="pay-button" type="submit">Continue to card payment</button>
@@ -106,8 +108,10 @@
         for (const field of requiredFields) {
           form.elements[field].value = params.get(field);
         }
-        copy.textContent = "You are being redirected to secure card payment.";
-        window.setTimeout(() => form.requestSubmit(), 750);
+        form.elements.cust_name.value = params.get("cust_name") || "ChowTrek Customer";
+        form.elements.display_mode.value = params.get("display_mode") || "PAGE";
+        copy.textContent =
+          "Press continue to open the secure Interswitch card page. If Interswitch asks about cookies, accept it, return here, and press continue again.";
       }
     </script>
   </body>

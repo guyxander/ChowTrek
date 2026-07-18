@@ -241,6 +241,8 @@ function buildQuicktellerCheckoutUrl(reference: string, amountNaira: number, ord
   url.searchParams.set("mode", quicktellerMode);
   url.searchParams.set("cust_email", customerEmail);
   url.searchParams.set("cust_id", orderId);
+  url.searchParams.set("cust_name", "ChowTrek Customer");
+  url.searchParams.set("display_mode", "PAGE");
   url.searchParams.set("pay_item_name", "ChowTrek order");
   url.searchParams.set("site_redirect_url", "https://chowtrek-landing.vercel.app/payment-return/");
 
