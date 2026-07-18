@@ -74,6 +74,7 @@ Connected project discovered through the Supabase app:
    - `docs/supabase_wallet_patch.sql`
    - `docs/supabase_quickteller_payment_patch.sql`
    - `docs/supabase_quickteller_verification_patch.sql`
+   - `docs/supabase_admin_approval_fix_patch.sql`
    - `docs/supabase_foreign_key_indexes_patch.sql`
    - `docs/supabase_profile_completion_patch.sql`
 

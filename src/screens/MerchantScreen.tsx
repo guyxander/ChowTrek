@@ -10,6 +10,7 @@ import { commerceRepository } from "../repositories/commerceRepository";
 import { uploadMerchantProductImage } from "../repositories/merchantProductRepository";
 import {
   loadProfileCompletion,
+  saveProfilePhone,
   saveRoleVerificationAddress
 } from "../repositories/profileCompletionRepository";
 import { colors } from "../theme/colors";
@@ -57,10 +58,11 @@ export function MerchantScreen({
   const [productImageUrl, setProductImageUrl] = useState("");
   const [storeName, setStoreName] = useState("Mama Put Kitchen");
   const [storeArea, setStoreArea] = useState("Yaba");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [verificationAddress, setVerificationAddress] = useState("");
   const [uploadMessage, setUploadMessage] = useState("");
   const [verificationMessage, setVerificationMessage] = useState(
-    "Save your private shop address before receiving orders."
+    "Save your phone and private shop address before receiving orders."
   );
   const [isSavingVerification, setIsSavingVerification] = useState(false);
   const metrics = commerceRepository.getMerchantMetrics();
@@ -72,6 +74,7 @@ export function MerchantScreen({
         setVerificationMessage(result.message);
         return;
       }
+      setPhoneNumber(result.data.phone);
       setVerificationAddress(result.data.merchantVerificationAddress);
     });
   }, []);
@@ -108,11 +111,22 @@ export function MerchantScreen({
 
   async function handleSaveVerificationAddress() {
     setIsSavingVerification(true);
-    const result = await saveRoleVerificationAddress("merchant", verificationAddress);
-    setVerificationMessage(result.message);
-    if (result.ok) {
+    const phoneResult = await saveProfilePhone(phoneNumber);
+
+    if (!phoneResult.ok) {
+      setVerificationMessage(phoneResult.message);
+      setIsSavingVerification(false);
+      return;
+    }
+
+    const addressResult = await saveRoleVerificationAddress("merchant", verificationAddress);
+    setVerificationMessage(
+      addressResult.ok ? "Merchant phone and private shop address saved." : addressResult.message
+    );
+    if (addressResult.ok) {
       const latest = await loadProfileCompletion();
       if (latest.ok) {
+        setPhoneNumber(latest.data.phone);
         setVerificationAddress(latest.data.merchantVerificationAddress);
       }
     }
@@ -204,8 +218,16 @@ export function MerchantScreen({
               <Text style={sharedStyles.cardTitle}>Merchant verification</Text>
             </View>
             <Text style={sharedStyles.bodyCopy}>
-              Save your private shop address here. Buyers cannot see this address; it is only for ChowTrek review.
+              Save your merchant phone and private shop address here. Buyers cannot see the shop verification address; it is only for ChowTrek review.
             </Text>
+            <TextInput
+              keyboardType="phone-pad"
+              onChangeText={setPhoneNumber}
+              placeholder="Merchant phone number"
+              placeholderTextColor={colors.muted}
+              style={styles.input}
+              value={phoneNumber}
+            />
             <TextInput
               multiline
               onChangeText={setVerificationAddress}
@@ -220,7 +242,7 @@ export function MerchantScreen({
               style={[styles.statusButton, isSavingVerification ? styles.disabledButton : null]}
             >
               <Text style={styles.statusButtonText}>
-                {isSavingVerification ? "Saving..." : "Save shop verification"}
+                {isSavingVerification ? "Saving..." : "Save merchant verification"}
               </Text>
             </TouchableOpacity>
             <Text style={styles.imageMeta}>{verificationMessage}</Text>

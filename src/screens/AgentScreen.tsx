@@ -5,6 +5,7 @@ import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "reac
 import { WalletPanel } from "../components/WalletPanel";
 import {
   loadProfileCompletion,
+  saveProfilePhone,
   saveRoleVerificationAddress
 } from "../repositories/profileCompletionRepository";
 import { colors } from "../theme/colors";
@@ -54,9 +55,10 @@ export function AgentScreen({
   const claimedCount = claimedOpportunityIds.length;
   const completedCount = deliveredOpportunityIds.length;
   const visibleOpportunities = agentOpportunities.slice(0, 3);
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [verificationAddress, setVerificationAddress] = useState("");
   const [verificationMessage, setVerificationMessage] = useState(
-    "Save your private home address before receiving delivery orders."
+    "Save your phone and private home address before receiving delivery orders."
   );
   const [isSavingVerification, setIsSavingVerification] = useState(false);
 
@@ -66,17 +68,29 @@ export function AgentScreen({
         setVerificationMessage(result.message);
         return;
       }
+      setPhoneNumber(result.data.phone);
       setVerificationAddress(result.data.agentVerificationAddress);
     });
   }, []);
 
   async function handleSaveVerificationAddress() {
     setIsSavingVerification(true);
-    const result = await saveRoleVerificationAddress("delivery_agent", verificationAddress);
-    setVerificationMessage(result.message);
-    if (result.ok) {
+    const phoneResult = await saveProfilePhone(phoneNumber);
+
+    if (!phoneResult.ok) {
+      setVerificationMessage(phoneResult.message);
+      setIsSavingVerification(false);
+      return;
+    }
+
+    const addressResult = await saveRoleVerificationAddress("delivery_agent", verificationAddress);
+    setVerificationMessage(
+      addressResult.ok ? "Delivery phone and private home address saved." : addressResult.message
+    );
+    if (addressResult.ok) {
       const latest = await loadProfileCompletion();
       if (latest.ok) {
+        setPhoneNumber(latest.data.phone);
         setVerificationAddress(latest.data.agentVerificationAddress);
       }
     }
@@ -165,8 +179,16 @@ export function AgentScreen({
               <Text style={styles.verificationTitle}>Delivery verification</Text>
             </View>
             <Text style={styles.verificationCopy}>
-              Save your private home address here. It is visible only to ChowTrek admins for delivery agent review.
+              Save your delivery phone and private home address here. It is visible only to ChowTrek admins for delivery agent review.
             </Text>
+            <TextInput
+              keyboardType="phone-pad"
+              onChangeText={setPhoneNumber}
+              placeholder="Delivery phone number"
+              placeholderTextColor={colors.muted}
+              style={styles.verificationPhoneInput}
+              value={phoneNumber}
+            />
             <TextInput
               multiline
               onChangeText={setVerificationAddress}
@@ -745,6 +767,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: 12,
     textAlignVertical: "top"
+  },
+  verificationPhoneInput: {
+    backgroundColor: colors.surfaceContainerLow,
+    borderColor: "rgba(191, 201, 195, 0.52)",
+    borderRadius: 8,
+    borderWidth: 1,
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "700",
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 12
   },
   verificationMessage: {
     color: colors.muted,

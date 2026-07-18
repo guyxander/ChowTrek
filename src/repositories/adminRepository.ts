@@ -145,27 +145,17 @@ export async function approveAdminQueueItem(item: AdminQueueItem): Promise<Admin
     return { ok: false, message: "Supabase is not configured for admin approval." };
   }
 
-  const table = item.kind === "merchant" ? "merchant_profiles" : "delivery_agent_profiles";
-  const update =
-    item.kind === "merchant"
-      ? { is_approved: true }
-      : { is_verified: true, is_available: true };
-
   if (item.kind !== "merchant" && item.kind !== "agent") {
     return { ok: false, message: "This admin queue item is not approvable in the mobile app." };
   }
 
-  const result = await supabase.from(table).update(update).eq("id", item.id).select("id").maybeSingle();
+  const result = await supabase.rpc("approve_admin_queue_item", {
+    queue_kind: item.kind,
+    queue_item_id: item.id
+  });
 
   if (result.error) {
     return { ok: false, message: `Admin approval failed: ${result.error.message}` };
-  }
-
-  if (!result.data) {
-    return {
-      ok: false,
-      message: "Admin approval was not allowed. Confirm this account has an approved admin role."
-    };
   }
 
   return { ok: true, message: `${item.label} approved.` };
