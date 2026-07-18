@@ -73,6 +73,13 @@ export async function createCheckoutOrder(
     return { ok: false, message: "Sign in with Google before checkout." };
   }
 
+  if (paymentMode === "Pay with card" && !isQuicktellerConfigured) {
+    return {
+      ok: false,
+      message: "Card payment is not configured in this APK yet. Rebuild the APK with Quickteller merchant code and pay item ID."
+    };
+  }
+
   const buyerCompletion = await requireBuyerCanCheckout();
 
   if (!buyerCompletion.ok) {
