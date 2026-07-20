@@ -30,6 +30,7 @@ const homeCategories = [
   "Express"
 ] as const;
 const fulfilmentFilters = ["All", "Trek Delivery", "Pickup", "Express"] as const;
+const VENDOR_PAGE_SIZE = 5;
 
 type HomeCategory = (typeof homeCategories)[number];
 type FulfilmentFilter = (typeof fulfilmentFilters)[number];
@@ -74,6 +75,7 @@ export function HomeScreen({
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
   const [selectedAddressId, setSelectedAddressId] = useState(addresses[0]?.id ?? "");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [visibleVendorLimit, setVisibleVendorLimit] = useState(VENDOR_PAGE_SIZE);
   const selectedAddress = addresses.find((address) => address.id === selectedAddressId) ?? addresses[0];
 
   useEffect(() => {
@@ -114,9 +116,15 @@ export function HomeScreen({
   }, [activeCategory, addressVendors, selectedMode]);
 
   const selectedVendor = filteredVendors.find((vendor) => vendor.id === selectedVendorId);
+  const visibleVendors = filteredVendors.slice(0, visibleVendorLimit);
+  const canLoadMoreVendors = visibleVendorLimit < filteredVendors.length;
   const selectedVendorProducts = selectedVendor
     ? products.filter((product) => product.vendorId === selectedVendor.id)
     : [];
+
+  useEffect(() => {
+    setVisibleVendorLimit(VENDOR_PAGE_SIZE);
+  }, [activeCategory, selectedAddressId, selectedMode]);
 
   useEffect(() => {
     if (!selectedVendorId) {
@@ -152,6 +160,7 @@ export function HomeScreen({
     setActiveCategory("Hidden gems");
     setSelectedMode("All");
     setSelectedVendorId(null);
+    setVisibleVendorLimit(VENDOR_PAGE_SIZE);
     onShowNotice("Showing all nearby merchants.");
   };
 
@@ -159,6 +168,7 @@ export function HomeScreen({
     setSelectedMode(mode);
     setFilterOpen(false);
     setSelectedVendorId(null);
+    setVisibleVendorLimit(VENDOR_PAGE_SIZE);
 
     if (mode === "All") {
       setActiveCategory("Hidden gems");
@@ -170,6 +180,16 @@ export function HomeScreen({
       mode === "Pickup" ? "Pick up" : mode === "Trek Delivery" ? "Trek delivery" : "Express"
     );
     onShowNotice(`Showing merchants with ${mode}.`);
+  };
+
+  const loadMoreVendors = () => {
+    if (!canLoadMoreVendors) {
+      return;
+    }
+
+    setVisibleVendorLimit((currentLimit) =>
+      Math.min(currentLimit + VENDOR_PAGE_SIZE, filteredVendors.length)
+    );
   };
 
   return (
@@ -193,6 +213,17 @@ export function HomeScreen({
         }
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[1]}
+        onScroll={({ nativeEvent }) => {
+          const distanceFromBottom =
+            nativeEvent.contentSize.height -
+            nativeEvent.layoutMeasurement.height -
+            nativeEvent.contentOffset.y;
+
+          if (distanceFromBottom < 220) {
+            loadMoreVendors();
+          }
+        }}
+        scrollEventThrottle={160}
       >
         <View>
           <View style={styles.headerRow}>
@@ -283,6 +314,8 @@ export function HomeScreen({
 
                   if (categoryMode) {
                     setSelectedMode(categoryMode);
+                  } else {
+                    setSelectedMode("All");
                   }
                 }}
                 style={[styles.categoryChip, isActive ? styles.categoryChipActive : null]}
@@ -300,7 +333,12 @@ export function HomeScreen({
             <Text style={styles.feedTitle}>Restaurants close to you</Text>
             <Text style={styles.feedMeta}>{getFeedSubtitle(activeCategory, selectedMode)}</Text>
           </View>
-          <TouchableOpacity onPress={() => setFilterOpen(true)} style={styles.filterButton}>
+          <TouchableOpacity
+            accessibilityLabel="Filter restaurants"
+            hitSlop={{ bottom: 12, left: 12, right: 12, top: 12 }}
+            onPress={() => setFilterOpen(true)}
+            style={styles.filterButton}
+          >
             <Ionicons color={colors.deepGreen} name="options-outline" size={18} />
             <Text numberOfLines={1} style={styles.filterText}>
               {selectedMode === "All" ? "Filter" : selectedMode}
@@ -310,7 +348,7 @@ export function HomeScreen({
 
         {filteredVendors.length > 0 ? (
           <>
-            {filteredVendors.map((vendor) => (
+            {visibleVendors.map((vendor) => (
               <VendorCard
                 key={vendor.id}
                 onPress={setSelectedVendorId}
@@ -318,10 +356,14 @@ export function HomeScreen({
                 vendor={vendor}
               />
             ))}
-            <TouchableOpacity onPress={resetFilters} style={styles.feedEndButton}>
+            <View style={styles.feedEndButton}>
               <Ionicons color={colors.deepGreen} name="infinite-outline" size={18} />
-              <Text style={styles.feedEndText}>Keep exploring nearby restaurants</Text>
-            </TouchableOpacity>
+              <Text style={styles.feedEndText}>
+                {canLoadMoreVendors
+                  ? "Finding more nearby restaurants"
+                  : "More nearby restaurants appear here as vendors join"}
+              </Text>
+            </View>
           </>
         ) : (
           <View style={sharedStyles.card}>
