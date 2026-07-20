@@ -1,11 +1,10 @@
 import { supabase } from "../lib/supabase";
 import {
-  isQuicktellerConfigured,
-  quicktellerCheckoutBridgeUrl,
-  quicktellerCurrencyCode,
-  quicktellerMerchantCode,
-  quicktellerMode,
-  quicktellerPayItemId
+  isMonnifyConfigured,
+  monnifyApiKey,
+  monnifyCheckoutInitUrl,
+  monnifyContractCode,
+  monnifyMode
 } from "../lib/productionConfig";
 import { CartItem, FulfilmentMode, PaymentMode } from "../types/domain";
 import {
@@ -73,10 +72,10 @@ export async function createCheckoutOrder(
     return { ok: false, message: "Sign in with Google before checkout." };
   }
 
-  if (paymentMode === "Pay with card" && !isQuicktellerConfigured) {
+  if (paymentMode === "Pay with card" && !isMonnifyConfigured) {
     return {
       ok: false,
-      message: "Card payment is not configured in this APK yet. Rebuild the APK with Quickteller merchant code and pay item ID."
+      message: "Card payment is not configured in this APK yet. Rebuild the APK with Monnify API key and contract code."
     };
   }
 
@@ -103,7 +102,7 @@ export async function createCheckoutOrder(
   const paymentReference = `CHOW-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
   const normalizedPaymentMode =
     paymentMode === "Pay with card"
-      ? "quickteller"
+      ? "monnify"
       : paymentMode === "Wallet"
         ? "wallet"
         : "pay_on_delivery";
@@ -208,8 +207,8 @@ export async function createCheckoutOrder(
   }
 
   const paymentUrl =
-    paymentMode === "Pay with card" && isQuicktellerConfigured
-      ? buildQuicktellerCheckoutUrl(paymentReference, totalNaira, orderId, user.email ?? "customer@chowtrek.app")
+    paymentMode === "Pay with card" && isMonnifyConfigured
+      ? buildMonnifyCheckoutUrl(paymentReference, totalNaira, orderId, user.email ?? "customer@chowtrek.app")
       : undefined;
 
   return {
@@ -231,20 +230,19 @@ function formatInlineNaira(amountNaira: number): string {
   return `₦${amountNaira.toLocaleString("en-NG")}`;
 }
 
-function buildQuicktellerCheckoutUrl(reference: string, amountNaira: number, orderId: string, customerEmail: string): string {
-  const url = new URL(quicktellerCheckoutBridgeUrl);
-  url.searchParams.set("merchant_code", quicktellerMerchantCode);
-  url.searchParams.set("pay_item_id", quicktellerPayItemId);
-  url.searchParams.set("txn_ref", reference);
-  url.searchParams.set("amount", String(amountNaira * 100));
-  url.searchParams.set("currency", quicktellerCurrencyCode);
-  url.searchParams.set("mode", quicktellerMode);
-  url.searchParams.set("cust_email", customerEmail);
-  url.searchParams.set("cust_id", orderId);
-  url.searchParams.set("cust_name", "ChowTrek Customer");
-  url.searchParams.set("display_mode", "PAGE");
-  url.searchParams.set("pay_item_name", "ChowTrek order");
-  url.searchParams.set("site_redirect_url", "https://chowtrek-landing.vercel.app/payment-return/");
+function buildMonnifyCheckoutUrl(reference: string, amountNaira: number, orderId: string, customerEmail: string): string {
+  const url = new URL(monnifyCheckoutInitUrl);
+  url.searchParams.set("mode", monnifyMode);
+  url.searchParams.set("apiKey", monnifyApiKey);
+  url.searchParams.set("contractCode", monnifyContractCode);
+  url.searchParams.set("paymentReference", reference);
+  url.searchParams.set("amount", String(amountNaira));
+  url.searchParams.set("currencyCode", "NGN");
+  url.searchParams.set("customerEmail", customerEmail);
+  url.searchParams.set("customerName", "ChowTrek Customer");
+  url.searchParams.set("paymentDescription", "ChowTrek order");
+  url.searchParams.set("purpose", "order");
+  url.searchParams.set("orderId", orderId);
 
   return url.toString();
 }

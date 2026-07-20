@@ -72,8 +72,7 @@ Connected project discovered through the Supabase app:
    - `docs/supabase_delivery_stage_patch.sql`
    - `docs/supabase_production_hardening_patch.sql`
    - `docs/supabase_wallet_patch.sql`
-   - `docs/supabase_quickteller_payment_patch.sql`
-   - `docs/supabase_quickteller_verification_patch.sql`
+   - `docs/supabase_monnify_payment_patch.sql`
    - `docs/supabase_admin_approval_fix_patch.sql`
    - `docs/supabase_foreign_key_indexes_patch.sql`
    - `docs/supabase_profile_completion_patch.sql`
@@ -91,35 +90,29 @@ Connected project discovered through the Supabase app:
    { "roles": ["admin"] }
    ```
 
-9. For Quickteller/Interswitch test card payments, configure the public checkout credentials in `.env.local`:
+9. For Monnify test card payments, configure the public checkout credentials in `.env.local`:
 
    ```bash
-   EXPO_PUBLIC_QUICKTELLER_MODE=TEST
-   EXPO_PUBLIC_QUICKTELLER_MERCHANT_CODE=...
-   EXPO_PUBLIC_QUICKTELLER_PAY_ITEM_ID=...
-   EXPO_PUBLIC_QUICKTELLER_CURRENCY_CODE=566
+   EXPO_PUBLIC_MONNIFY_MODE=TEST
+   EXPO_PUBLIC_MONNIFY_API_KEY=...
+   EXPO_PUBLIC_MONNIFY_CONTRACT_CODE=...
    ```
 
    Add these server-only variables to Vercel Production. Do not add them to the mobile app bundle:
 
    ```bash
    SUPABASE_SERVICE_ROLE_KEY=...
-   QUICKTELLER_MODE=TEST
-   QUICKTELLER_MERCHANT_CODE=...
-   # Optional override if Interswitch gives you a different transaction-query URL:
-   # QUICKTELLER_QUERY_BASE_URL=https://sandbox.interswitchng.com
-   #
-   # Optional only if Interswitch asks you to use the signed Pay with Quickteller query API:
-   # QUICKTELLER_VERIFY_MODE=PWQ
-   # QUICKTELLER_CLIENT_ID=chowtrek-landing.vercel.app
-   # QUICKTELLER_SECRET_KEY=...
+   MONNIFY_MODE=TEST
+   MONNIFY_API_KEY=...
+   MONNIFY_SECRET_KEY=...
+   MONNIFY_CONTRACT_CODE=...
    ```
 
-   The mobile app creates a pending transaction and opens the hosted ChowTrek checkout bridge with
-   Quickteller parameters. The Vercel `/api/quickteller-verify` endpoint confirms the payment with
-   Interswitch Web Checkout by querying `collections/api/v1/gettransaction.json` with merchant code,
-   transaction reference, and expected amount, then calls the service-role-only Supabase settlement
-   function.
+   The mobile app creates a pending transaction and opens `/api/monnify-init`. The Vercel endpoint
+   authenticates with Monnify, initializes hosted checkout, and redirects the buyer to Monnify's
+   checkout URL. The Vercel `/api/monnify-verify` endpoint confirms the payment using Monnify's
+   server-side transaction query API, checks the paid amount, then calls the service-role-only
+   Supabase settlement function.
 
 ## App Behavior
 

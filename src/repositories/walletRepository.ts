@@ -217,7 +217,7 @@ export async function requestWalletTopUp(
     wallet_id: walletId,
     user_id: user.id,
     amount_naira: amountNaira,
-    provider: "quickteller",
+    provider: "monnify",
     provider_reference: providerReference,
     status: "pending"
   });

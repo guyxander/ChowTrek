@@ -5,31 +5,27 @@ declare const process: {
 };
 
 type ExpoExtra = {
-  quicktellerCheckoutBridgeUrl?: string;
-  quicktellerCurrencyCode?: string;
-  quicktellerMerchantCode?: string;
-  quicktellerMode?: string;
-  quicktellerPayItemId?: string;
+  monnifyCheckoutInitUrl?: string;
+  monnifyApiKey?: string;
+  monnifyContractCode?: string;
+  monnifyMode?: string;
 };
 
 const extra = (Constants.expoConfig?.extra ?? {}) as ExpoExtra;
 const env = process.env ?? {};
 
-export const quicktellerMode =
-  env.EXPO_PUBLIC_QUICKTELLER_MODE || extra.quicktellerMode || "TEST";
+export const monnifyMode =
+  env.EXPO_PUBLIC_MONNIFY_MODE || extra.monnifyMode || "TEST";
 
-export const quicktellerMerchantCode =
-  env.EXPO_PUBLIC_QUICKTELLER_MERCHANT_CODE || extra.quicktellerMerchantCode || "";
+export const monnifyApiKey =
+  env.EXPO_PUBLIC_MONNIFY_API_KEY || extra.monnifyApiKey || "";
 
-export const quicktellerPayItemId =
-  env.EXPO_PUBLIC_QUICKTELLER_PAY_ITEM_ID || extra.quicktellerPayItemId || "";
+export const monnifyContractCode =
+  env.EXPO_PUBLIC_MONNIFY_CONTRACT_CODE || extra.monnifyContractCode || "";
 
-export const quicktellerCurrencyCode =
-  env.EXPO_PUBLIC_QUICKTELLER_CURRENCY_CODE || extra.quicktellerCurrencyCode || "566";
+export const monnifyCheckoutInitUrl =
+  env.EXPO_PUBLIC_MONNIFY_CHECKOUT_INIT_URL ||
+  extra.monnifyCheckoutInitUrl ||
+  "https://chowtrek-landing.vercel.app/api/monnify-init";
 
-export const quicktellerCheckoutBridgeUrl =
-  env.EXPO_PUBLIC_QUICKTELLER_CHECKOUT_BRIDGE_URL ||
-  extra.quicktellerCheckoutBridgeUrl ||
-  "https://chowtrek-landing.vercel.app/quickteller-checkout/";
-
-export const isQuicktellerConfigured = Boolean(quicktellerMerchantCode && quicktellerPayItemId);
+export const isMonnifyConfigured = Boolean(monnifyApiKey && monnifyContractCode);

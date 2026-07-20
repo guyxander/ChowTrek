@@ -54,7 +54,7 @@ create table if not exists public.wallet_top_up_requests (
   wallet_id uuid not null references public.wallets(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete cascade,
   amount_naira integer not null check (amount_naira > 0),
-  provider text not null default 'quickteller' check (provider in ('quickteller')),
+  provider text not null default 'monnify' check (provider in ('monnify')),
   provider_reference text not null unique,
   status text not null default 'pending' check (status in ('pending', 'paid', 'failed', 'cancelled')),
   created_at timestamptz not null default now(),

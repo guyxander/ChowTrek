@@ -6,13 +6,13 @@ const requiredFiles = [
   'public/index.html',
   'public/privacy/index.html',
   'public/terms/index.html',
-  'public/quickteller-checkout/index.html',
   'public/payment-return/index.html',
   'public/assets/styles.css',
   'public/assets/site.js',
   'api/download.js',
   'api/download-count.js',
-  'api/quickteller-verify.js',
+  'api/monnify-init.js',
+  'api/monnify-verify.js',
   'vercel.json',
 ];
 
@@ -34,7 +34,6 @@ if (apkSize < 10_000_000) {
 }
 
 const home = readFileSync(join(root, 'public/index.html'), 'utf8');
-const checkout = readFileSync(join(root, 'public/quickteller-checkout/index.html'), 'utf8');
 const paymentReturn = readFileSync(join(root, 'public/payment-return/index.html'), 'utf8');
 const requiredHomeContent = [
   'Download APK',
@@ -50,13 +49,7 @@ for (const marker of requiredHomeContent) {
   }
 }
 
-for (const marker of ['sandbox.interswitchng.com/collections/w/pay', 'newwebpay.interswitchng.com/collections/w/pay', 'merchant_code', 'pay_item_id']) {
-  if (!checkout.includes(marker)) {
-    throw new Error(`Quickteller checkout bridge missing required marker: ${marker}`);
-  }
-}
-
-for (const marker of ['/api/quickteller-verify', 'Payment verified']) {
+for (const marker of ['/api/monnify-verify', 'Payment verified']) {
   if (!paymentReturn.includes(marker)) {
     throw new Error(`Payment return page missing required marker: ${marker}`);
   }

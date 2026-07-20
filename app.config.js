@@ -41,16 +41,14 @@ module.exports = () => ({
   ...baseConfig.expo,
   extra: {
     ...baseConfig.expo.extra,
-    quicktellerCheckoutBridgeUrl:
-      env.EXPO_PUBLIC_QUICKTELLER_CHECKOUT_BRIDGE_URL ||
-      baseConfig.expo.extra?.quicktellerCheckoutBridgeUrl,
-    quicktellerCurrencyCode:
-      env.EXPO_PUBLIC_QUICKTELLER_CURRENCY_CODE || baseConfig.expo.extra?.quicktellerCurrencyCode,
-    quicktellerMerchantCode:
-      env.EXPO_PUBLIC_QUICKTELLER_MERCHANT_CODE || baseConfig.expo.extra?.quicktellerMerchantCode,
-    quicktellerMode:
-      env.EXPO_PUBLIC_QUICKTELLER_MODE || baseConfig.expo.extra?.quicktellerMode || "TEST",
-    quicktellerPayItemId:
-      env.EXPO_PUBLIC_QUICKTELLER_PAY_ITEM_ID || baseConfig.expo.extra?.quicktellerPayItemId
+    monnifyCheckoutInitUrl:
+      env.EXPO_PUBLIC_MONNIFY_CHECKOUT_INIT_URL ||
+      baseConfig.expo.extra?.monnifyCheckoutInitUrl,
+    monnifyApiKey:
+      env.EXPO_PUBLIC_MONNIFY_API_KEY || baseConfig.expo.extra?.monnifyApiKey,
+    monnifyContractCode:
+      env.EXPO_PUBLIC_MONNIFY_CONTRACT_CODE || baseConfig.expo.extra?.monnifyContractCode,
+    monnifyMode:
+      env.EXPO_PUBLIC_MONNIFY_MODE || baseConfig.expo.extra?.monnifyMode || "TEST"
   }
 });

@@ -19,7 +19,10 @@
     <script>
       const statusEl = document.querySelector("[data-payment-status]");
       const params = new URLSearchParams(window.location.search);
+      const provider = (params.get("provider") || "monnify").toLowerCase();
       const reference =
+        params.get("paymentReference") ||
+        params.get("paymentreference") ||
         params.get("txnref") ||
         params.get("txnRef") ||
         params.get("txn_ref") ||
@@ -32,7 +35,9 @@
         statusEl.textContent =
           "ChowTrek did not receive a payment reference. Open the app and refresh your order or wallet screen.";
       } else {
-        fetch(`/api/quickteller-verify?${params.toString()}`)
+        const endpoint = provider === "monnify" ? "/api/monnify-verify" : "/api/quickteller-verify";
+
+        fetch(`${endpoint}?${params.toString()}`)
           .then((response) => response.json())
           .then((result) => {
             statusEl.textContent = result.ok

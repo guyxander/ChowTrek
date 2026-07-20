@@ -52,12 +52,11 @@ import {
   requestWalletWithdrawal
 } from "./src/repositories/walletRepository";
 import {
-  isQuicktellerConfigured,
-  quicktellerCheckoutBridgeUrl,
-  quicktellerCurrencyCode,
-  quicktellerMerchantCode,
-  quicktellerMode,
-  quicktellerPayItemId
+  isMonnifyConfigured,
+  monnifyApiKey,
+  monnifyCheckoutInitUrl,
+  monnifyContractCode,
+  monnifyMode
 } from "./src/lib/productionConfig";
 import {
   syncAgentAvailability,
@@ -314,7 +313,7 @@ export default function App() {
       return;
     }
 
-    if (!isQuicktellerConfigured) {
+    if (!isMonnifyConfigured) {
       setDataNotice("Add card payment test credentials to .env.local to collect card payments.");
       return;
     }
@@ -327,7 +326,7 @@ export default function App() {
       return;
     }
 
-    await Linking.openURL(buildQuicktellerUrl(reference, amountNaira, "wallet_top_up"));
+    await Linking.openURL(buildMonnifyUrl(reference, amountNaira, "wallet_top_up"));
   }
 
   function openCustomerWallet() {
@@ -1003,18 +1002,18 @@ function mergeNotificationPreferences(
   }));
 }
 
-function buildQuicktellerUrl(reference: string, amountNaira: number, purpose: string): string {
-  const url = new URL(quicktellerCheckoutBridgeUrl);
-  url.searchParams.set("merchant_code", quicktellerMerchantCode);
-  url.searchParams.set("pay_item_id", quicktellerPayItemId);
-  url.searchParams.set("txn_ref", reference);
-  url.searchParams.set("amount", String(amountNaira * 100));
-  url.searchParams.set("currency", quicktellerCurrencyCode);
-  url.searchParams.set("mode", quicktellerMode);
-  url.searchParams.set("cust_email", "customer@chowtrek.app");
-  url.searchParams.set("cust_id", purpose);
-  url.searchParams.set("pay_item_name", "ChowTrek wallet top-up");
-  url.searchParams.set("site_redirect_url", "https://chowtrek-landing.vercel.app/payment-return/");
+function buildMonnifyUrl(reference: string, amountNaira: number, purpose: string): string {
+  const url = new URL(monnifyCheckoutInitUrl);
+  url.searchParams.set("mode", monnifyMode);
+  url.searchParams.set("apiKey", monnifyApiKey);
+  url.searchParams.set("contractCode", monnifyContractCode);
+  url.searchParams.set("paymentReference", reference);
+  url.searchParams.set("amount", String(amountNaira));
+  url.searchParams.set("currencyCode", "NGN");
+  url.searchParams.set("customerEmail", "customer@chowtrek.app");
+  url.searchParams.set("customerName", "ChowTrek Customer");
+  url.searchParams.set("paymentDescription", "ChowTrek wallet top-up");
+  url.searchParams.set("purpose", purpose);
 
   return url.toString();
 }

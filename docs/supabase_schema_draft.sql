@@ -18,7 +18,7 @@ create type public.order_status as enum (
   'cancelled'
 );
 create type public.fulfilment_mode as enum ('pickup', 'trek_delivery', 'express');
-create type public.payment_mode as enum ('quickteller', 'pay_on_delivery', 'wallet');
+create type public.payment_mode as enum ('monnify', 'pay_on_delivery', 'wallet');
 create type public.timeline_event_type as enum (
   'food_ready',
   'new_product',
@@ -257,7 +257,7 @@ create table public.wallet_top_up_requests (
   wallet_id uuid not null references public.wallets(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete cascade,
   amount_naira integer not null check (amount_naira > 0),
-  provider text not null default 'quickteller' check (provider in ('quickteller')),
+  provider text not null default 'monnify' check (provider in ('monnify')),
   provider_reference text not null unique,
   status text not null default 'pending' check (status in ('pending', 'paid', 'failed', 'cancelled')),
   created_at timestamptz not null default now(),

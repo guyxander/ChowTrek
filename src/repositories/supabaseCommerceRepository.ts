@@ -40,7 +40,7 @@ type OrderRow = {
   status: "preparing" | "ready" | "in_transit" | "arrived" | "delivered" | "cancelled" | "placed" | "accepted" | "cart";
   fulfilment_mode: "pickup" | "trek_delivery" | "express";
   total_naira: number;
-  payment_mode: "flutterwave" | "quickteller" | "pay_on_delivery" | "wallet";
+  payment_mode: "flutterwave" | "quickteller" | "monnify" | "pay_on_delivery" | "wallet";
   payment_status: "pending" | "authorized" | "paid" | "failed" | "pay_on_delivery";
   payment_reference: string | null;
   created_at: string;
@@ -97,6 +97,7 @@ const fulfilmentModeMap = {
 const paymentModeMap = {
   flutterwave: "Pay with card",
   quickteller: "Pay with card",
+  monnify: "Pay with card",
   pay_on_delivery: "Pay on Delivery",
   wallet: "Wallet"
 } as const;
