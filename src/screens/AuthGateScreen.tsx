@@ -5,7 +5,7 @@ import { ImageBackground, StyleSheet, Text, TouchableOpacity, View } from "react
 import { signInWithGoogle } from "../repositories/authRepository";
 import { colors } from "../theme/colors";
 
-const launchBackground = require("../../assets/chowtrek-launch-background.png");
+const launchBackground = require("../../assets/chowtrek-google-signin-background.png");
 
 type Props = {
   onSignedIn: (identity: string) => void;

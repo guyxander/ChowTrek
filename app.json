@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/chowtrek-logo.png",
     "splash": {
-      "image": "./assets/chowtrek-launch-background.png",
+      "image": "./assets/chowtrek-google-signin-background.png",
       "resizeMode": "cover",
       "backgroundColor": "#003527"
     },

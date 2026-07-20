@@ -1,6 +1,6 @@
 import { ActivityIndicator, ImageBackground, StyleSheet, Text, View } from "react-native";
 
-const launchBackground = require("../../assets/chowtrek-launch-background.png");
+const launchBackground = require("../../assets/chowtrek-google-signin-background.png");
 
 export function LaunchLoadingScreen() {
   return (
