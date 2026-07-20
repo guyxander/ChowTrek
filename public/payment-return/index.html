@@ -14,10 +14,14 @@
       <p data-payment-status>
         Verifying your card payment. Keep this page open for a moment, then return to the app.
       </p>
-      <a class="primary-button" href="/">Back to ChowTrek</a>
+      <a class="primary-button" data-open-app href="chowtrek://orders">Back to ChowTrek app</a>
+      <p>
+        <a href="/">Open download page instead</a>
+      </p>
     </main>
     <script>
       const statusEl = document.querySelector("[data-payment-status]");
+      const openAppLink = document.querySelector("[data-open-app]");
       const params = new URLSearchParams(window.location.search);
       const provider = (params.get("provider") || "monnify").toLowerCase();
       const reference =
@@ -49,6 +53,14 @@
               "Payment verification could not finish right now. Return to ChowTrek and refresh shortly.";
           });
       }
+
+      openAppLink.addEventListener("click", () => {
+        window.setTimeout(() => {
+          if (!document.hidden) {
+            window.location.href = "/";
+          }
+        }, 1200);
+      });
     </script>
   </body>
 </html>
