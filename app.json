@@ -6,6 +6,11 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/chowtrek-logo.png",
+    "splash": {
+      "image": "./assets/chowtrek-launch-background.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#003527"
+    },
     "userInterfaceStyle": "automatic",
     "android": {
       "package": "ng.chowtrek.app",

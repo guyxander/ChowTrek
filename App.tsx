@@ -21,6 +21,7 @@ import { AuthGateScreen } from "./src/screens/AuthGateScreen";
 import { CommunityScreen } from "./src/screens/CommunityScreen";
 import { DiscoverScreen } from "./src/screens/DiscoverScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
+import { LaunchLoadingScreen } from "./src/screens/LaunchLoadingScreen";
 import { MerchantScreen } from "./src/screens/MerchantScreen";
 import { OrdersScreen } from "./src/screens/OrdersScreen";
 import { ProfileEditScreen } from "./src/screens/ProfileEditScreen";
@@ -790,15 +791,16 @@ export default function App() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor={colors.surface} style="dark" translucent={false} />
+    <SafeAreaView style={[styles.safeArea, !signedInIdentity ? styles.authSafeArea : null]}>
+      <StatusBar
+        backgroundColor={signedInIdentity ? colors.surface : colors.deepGreen}
+        style={signedInIdentity ? "dark" : "light"}
+        translucent={false}
+      />
       <View style={styles.app}>
         {!signedInIdentity ? (
           <View style={[styles.content, styles.authOnlyContent]}>
-            {isCheckingAuth ? (
-              <Text style={styles.dataNotice}>Checking your ChowTrek session...</Text>
-            ) : null}
-            <AuthGateScreen onSignedIn={handleSignedIn} />
+            {isCheckingAuth ? <LaunchLoadingScreen /> : <AuthGateScreen onSignedIn={handleSignedIn} />}
           </View>
         ) : activeTab === "home" ? (
           <View style={[styles.content, styles.fixedCustomerContent]}>
@@ -1089,7 +1091,11 @@ const styles = StyleSheet.create({
   },
   authOnlyContent: {
     flex: 1,
-    paddingBottom: 16
+    padding: 0,
+    paddingBottom: 0
+  },
+  authSafeArea: {
+    backgroundColor: colors.deepGreen
   },
   dataNotice: {
     color: colors.muted,
