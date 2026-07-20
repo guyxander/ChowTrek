@@ -105,12 +105,18 @@ export function ProfileScreen({
 
   async function handleSignOut() {
     setIsSending(true);
+    setSignedInIdentity(null);
+    onAuthStateChange();
     const result = await signOut();
     setMessage(result.message);
-    if (result.ok) {
-      setSignedInIdentity(null);
-      onAuthStateChange();
+    if (!result.ok) {
+      const identity = await getCurrentSessionIdentity();
+      setSignedInIdentity(identity);
+      if (!identity) {
+        setMessage("Signed out locally.");
+      }
     }
+    onAuthStateChange();
     setIsSending(false);
   }
 
@@ -152,10 +158,12 @@ export function ProfileScreen({
           </TouchableOpacity>
         </View>
         <Text style={styles.profileName}>{signedInIdentity ?? "ChowTrek Guest"}</Text>
-        <View style={styles.memberBadge}>
-          <Ionicons color="#783200" name="shield-checkmark" size={14} />
-          <Text style={styles.memberBadgeText}>Member since Oct 2023</Text>
-        </View>
+        {signedInIdentity ? (
+          <View style={styles.memberBadge}>
+            <Ionicons color="#783200" name="shield-checkmark" size={14} />
+            <Text style={styles.memberBadgeText}>Member since Oct 2023</Text>
+          </View>
+        ) : null}
         <TouchableOpacity
           disabled={isSending}
           onPress={signedInIdentity ? handleSignOut : handleGoogleSignIn}
@@ -191,34 +199,38 @@ export function ProfileScreen({
         ) : null}
       </View>
 
-      <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionTitle}>Favorite Merchants</Text>
-        <TouchableOpacity onPress={onOpenFavorites}>
-          <Text style={styles.viewAllText}>View All</Text>
-        </TouchableOpacity>
-      </View>
-      <ScrollView
-        contentContainerStyle={styles.favoriteList}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-      >
-        {favoriteMerchants.map((merchant) => (
-          <View key={merchant.id} style={styles.merchantCard}>
-            <Image source={{ uri: merchant.image }} style={styles.merchantImage} />
-            <View style={styles.merchantMeta}>
-              <Text numberOfLines={1} style={styles.merchantName}>
-                {merchant.name}
-              </Text>
-              <View style={styles.ratingRow}>
-                <Ionicons color={colors.orange} name="star" size={14} />
-                <Text style={styles.ratingText}>
-                  {merchant.rating} - {merchant.distance}
-                </Text>
-              </View>
-            </View>
+      {signedInIdentity ? (
+        <>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>Favorite Merchants</Text>
+            <TouchableOpacity onPress={onOpenFavorites}>
+              <Text style={styles.viewAllText}>View All</Text>
+            </TouchableOpacity>
           </View>
-        ))}
-      </ScrollView>
+          <ScrollView
+            contentContainerStyle={styles.favoriteList}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+          >
+            {favoriteMerchants.map((merchant) => (
+              <View key={merchant.id} style={styles.merchantCard}>
+                <Image source={{ uri: merchant.image }} style={styles.merchantImage} />
+                <View style={styles.merchantMeta}>
+                  <Text numberOfLines={1} style={styles.merchantName}>
+                    {merchant.name}
+                  </Text>
+                  <View style={styles.ratingRow}>
+                    <Ionicons color={colors.orange} name="star" size={14} />
+                    <Text style={styles.ratingText}>
+                      {merchant.rating} - {merchant.distance}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </>
+      ) : null}
 
       <View style={styles.menuCard}>
         <MenuRow icon="wallet-outline" label="Wallet" onPress={onOpenWallet} />
@@ -226,12 +238,9 @@ export function ProfileScreen({
         <MenuRow icon="settings-outline" label="Settings" onPress={onOpenSettings} />
         <MenuRow icon="help-circle-outline" label="Help & Support" onPress={onOpenSupport} />
         <MenuRow icon="people-outline" label="Invite Friends" onPress={onOpenInvite} />
-        <MenuRow
-          danger
-          icon="log-out-outline"
-          label="Logout"
-          onPress={signedInIdentity ? handleSignOut : undefined}
-        />
+        {signedInIdentity ? (
+          <MenuRow danger icon="log-out-outline" label="Logout" onPress={handleSignOut} />
+        ) : null}
       </View>
 
       <View style={styles.footer}>
