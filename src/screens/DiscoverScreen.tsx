@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   BackHandler,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -27,7 +28,9 @@ type Props = {
   onAddToCart: (product: Product, vendor: Vendor) => void;
   onCartQuantityChange: (itemId: string, delta: number) => void;
   onOpenCart: () => void;
+  onRefresh: () => void;
   onToggleFollow: (vendorId: string) => void;
+  refreshing: boolean;
 };
 
 export function DiscoverScreen({
@@ -36,8 +39,10 @@ export function DiscoverScreen({
   onAddToCart,
   onCartQuantityChange,
   onOpenCart,
+  onRefresh,
   onToggleFollow,
   products,
+  refreshing,
   timelineEvents,
   vendors
 }: Props) {
@@ -88,8 +93,10 @@ export function DiscoverScreen({
         onBack={() => setSelectedVendorId(null)}
         onCartQuantityChange={onCartQuantityChange}
         onOpenCart={onOpenCart}
+        onRefresh={onRefresh}
         onToggleFollow={onToggleFollow}
         products={selectedVendorProducts}
+        refreshing={refreshing}
         vendor={selectedVendor}
       />
     );
@@ -100,6 +107,14 @@ export function DiscoverScreen({
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            colors={[colors.deepGreen]}
+            onRefresh={onRefresh}
+            refreshing={refreshing}
+            tintColor={colors.deepGreen}
+          />
+        }
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[1]}
       >

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { colors } from "../theme/colors";
 import { CartItem, Product, Vendor } from "../types/domain";
@@ -15,7 +15,9 @@ type Props = {
   onBack: () => void;
   onCartQuantityChange: (itemId: string, delta: number) => void;
   onOpenCart: () => void;
+  onRefresh: () => void;
   onToggleFollow: (vendorId: string) => void;
+  refreshing: boolean;
 };
 
 const menuCategories = ["Food Ready", "Rice & Bowls", "Grills", "Drinks", "All"];
@@ -26,8 +28,10 @@ export function StorefrontView({
   onBack,
   onCartQuantityChange,
   onOpenCart,
+  onRefresh,
   onToggleFollow,
   products,
+  refreshing,
   vendor
 }: Props) {
   const [selectedCategory, setSelectedCategory] = useState(menuCategories[0]);
@@ -73,6 +77,14 @@ export function StorefrontView({
 
       <ScrollView
         contentContainerStyle={[styles.scrollContent, cartCount > 0 ? styles.scrollWithCart : null]}
+        refreshControl={
+          <RefreshControl
+            colors={[colors.deepGreen]}
+            onRefresh={onRefresh}
+            refreshing={refreshing}
+            tintColor={colors.deepGreen}
+          />
+        }
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.hero, { backgroundColor: vendor.color }]}>

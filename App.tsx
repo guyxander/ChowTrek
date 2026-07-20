@@ -4,6 +4,7 @@ import {
   Alert,
   BackHandler,
   Linking,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -155,6 +156,7 @@ export default function App() {
   const [pickedUpOpportunityIds, setPickedUpOpportunityIds] = useState<string[]>([]);
   const [arrivedOpportunityIds, setArrivedOpportunityIds] = useState<string[]>([]);
   const [deliveredOpportunityIds, setDeliveredOpportunityIds] = useState<string[]>([]);
+  const [isRefreshingLiveData, setIsRefreshingLiveData] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -248,6 +250,39 @@ export default function App() {
 
     if (result.message) {
       setDataNotice(result.message);
+    }
+  }
+
+  async function refreshLiveData() {
+    setIsRefreshingLiveData(true);
+
+    try {
+      const [snapshot, addressesResult] = await Promise.all([
+        loadCommerceSnapshot(),
+        loadSavedAddresses(),
+        refreshWallets()
+      ]);
+
+      setVendors(snapshot.vendors);
+      setCartItems(snapshot.cartItems);
+      setMerchantProducts(snapshot.products);
+      setOrders(snapshot.orders);
+      setTimelineEvents(snapshot.timelineEvents);
+      setNotificationPreferences(mergeNotificationPreferences(snapshot.notificationPreferences));
+      setAgentOpportunities(snapshot.agentOpportunities);
+      setSavedAddresses(addressesResult.addresses);
+      setDataNotice(
+        snapshot.warning ??
+          addressesResult.message ??
+          (snapshot.source === "supabase"
+            ? "Refreshed live ChowTrek data."
+            : "Refreshed local demo data.")
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not refresh ChowTrek data.";
+      setDataNotice(message);
+    } finally {
+      setIsRefreshingLiveData(false);
     }
   }
 
@@ -694,9 +729,11 @@ export default function App() {
               onOpenAddresses={() => navigateTo("profile", "addresses")}
               onOpenCart={() => changeActiveTab("orders")}
               onOpenNotifications={openPushNotificationSettings}
+              onRefresh={refreshLiveData}
               onShowNotice={setDataNotice}
               onToggleFollow={toggleVendorFollow}
               products={merchantProducts}
+              refreshing={isRefreshingLiveData}
               vendors={vendors}
             />
           </View>
@@ -708,8 +745,10 @@ export default function App() {
               onAddToCart={addProductToCart}
               onCartQuantityChange={changeCartQuantity}
               onOpenCart={() => changeActiveTab("orders")}
+              onRefresh={refreshLiveData}
               onToggleFollow={toggleVendorFollow}
               products={merchantProducts}
+              refreshing={isRefreshingLiveData}
               timelineEvents={timelineEvents}
               vendors={vendors}
             />
@@ -725,7 +764,9 @@ export default function App() {
               orders={orders}
               paymentMode={paymentMode}
               onPaymentModeChange={setPaymentMode}
+              onRefresh={refreshLiveData}
               onWalletRefresh={refreshWallets}
+              refreshing={isRefreshingLiveData}
               wallet={wallets.customer}
             />
           </View>
@@ -735,6 +776,14 @@ export default function App() {
               styles.content,
               isRoleDashboard ? styles.roleDashboardContent : null
             ]}
+            refreshControl={
+              <RefreshControl
+                colors={[colors.deepGreen]}
+                onRefresh={refreshLiveData}
+                refreshing={isRefreshingLiveData}
+                tintColor={colors.deepGreen}
+              />
+            }
           >
             {!isRoleDashboard ? <Text style={styles.dataNotice}>{dataNotice}</Text> : null}
             {activeTab === "community" ? <CommunityScreen timelineEvents={timelineEvents} /> : null}

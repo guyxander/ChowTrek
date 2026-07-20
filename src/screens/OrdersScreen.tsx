@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { BrandLogo } from "../components/BrandLogo";
 import { OrderCard } from "../components/OrderCard";
@@ -20,7 +20,9 @@ type Props = {
   onCheckout: (items?: CartItem[], fulfilmentMode?: FulfilmentMode) => Promise<void> | void;
   onOpenWallet: () => void;
   onPaymentModeChange: (mode: PaymentMode) => void;
+  onRefresh: () => void;
   onWalletRefresh: () => void;
+  refreshing: boolean;
 };
 
 type VendorCart = {
@@ -51,9 +53,11 @@ export function OrdersScreen({
   onCheckout,
   onOpenWallet,
   onPaymentModeChange,
+  onRefresh,
   onWalletRefresh,
   orders,
   paymentMode,
+  refreshing,
   wallet
 }: Props) {
   const [activeTab, setActiveTab] = useState<OrderTab>("cart");
@@ -136,6 +140,14 @@ export function OrdersScreen({
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            colors={[colors.deepGreen]}
+            onRefresh={onRefresh}
+            refreshing={refreshing}
+            tintColor={colors.deepGreen}
+          />
+        }
         showsVerticalScrollIndicator={false}
         style={styles.scrollArea}
       >

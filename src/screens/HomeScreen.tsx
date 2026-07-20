@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
 import {
   BackHandler,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -31,8 +32,10 @@ type Props = {
   onOpenAddresses: () => void;
   onOpenCart: () => void;
   onOpenNotifications: () => void;
+  onRefresh: () => void;
   onShowNotice: (message: string) => void;
   onToggleFollow: (vendorId: string) => void;
+  refreshing: boolean;
 };
 
 export function HomeScreen({
@@ -45,9 +48,11 @@ export function HomeScreen({
   onOpenAddresses,
   onOpenCart,
   onOpenNotifications,
+  onRefresh,
   onShowNotice,
   onToggleFollow,
   products,
+  refreshing,
   vendors
 }: Props) {
   const [query, setQuery] = useState("");
@@ -112,8 +117,10 @@ export function HomeScreen({
         onBack={() => setSelectedVendorId(null)}
         onCartQuantityChange={onCartQuantityChange}
         onOpenCart={onOpenCart}
+        onRefresh={onRefresh}
         onToggleFollow={onToggleFollow}
         products={selectedVendorProducts}
+        refreshing={refreshing}
         vendor={selectedVendor}
       />
     );
@@ -131,6 +138,14 @@ export function HomeScreen({
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            colors={[colors.deepGreen]}
+            onRefresh={onRefresh}
+            refreshing={refreshing}
+            tintColor={colors.deepGreen}
+          />
+        }
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[1]}
       >
