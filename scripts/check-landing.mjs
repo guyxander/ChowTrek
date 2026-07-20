@@ -13,6 +13,7 @@ const requiredFiles = [
   'api/download-count.js',
   'api/monnify-init.js',
   'api/monnify-verify.js',
+  'api/monnify-webhook.js',
   'vercel.json',
 ];
 

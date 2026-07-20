@@ -46,6 +46,7 @@ import {
   updateMerchantStorefront
 } from "./src/repositories/merchantProductRepository";
 import { updateMerchantOrderStatus } from "./src/repositories/orderStatusRepository";
+import { verifyPendingCardPayments } from "./src/repositories/paymentVerificationRepository";
 import { requestPushNotificationPermission } from "./src/repositories/notificationRepository";
 import {
   loadWalletSummary,
@@ -262,19 +263,27 @@ export default function App() {
         loadSavedAddresses(),
         refreshWallets()
       ]);
+      const verification = await verifyPendingCardPayments(snapshot.orders ?? []);
+      const latestSnapshot =
+        verification.verified > 0 ? await loadCommerceSnapshot() : snapshot;
 
-      setVendors(snapshot.vendors);
-      setCartItems(snapshot.cartItems);
-      setMerchantProducts(snapshot.products);
-      setOrders(snapshot.orders);
-      setTimelineEvents(snapshot.timelineEvents);
-      setNotificationPreferences(mergeNotificationPreferences(snapshot.notificationPreferences));
-      setAgentOpportunities(snapshot.agentOpportunities);
+      if (verification.verified > 0) {
+        await refreshWallets();
+      }
+
+      setVendors(latestSnapshot.vendors);
+      setCartItems(latestSnapshot.cartItems);
+      setMerchantProducts(latestSnapshot.products);
+      setOrders(latestSnapshot.orders);
+      setTimelineEvents(latestSnapshot.timelineEvents);
+      setNotificationPreferences(mergeNotificationPreferences(latestSnapshot.notificationPreferences));
+      setAgentOpportunities(latestSnapshot.agentOpportunities);
       setSavedAddresses(addressesResult.addresses);
       setDataNotice(
-        snapshot.warning ??
+        verification.message ??
+          latestSnapshot.warning ??
           addressesResult.message ??
-          (snapshot.source === "supabase"
+          (latestSnapshot.source === "supabase"
             ? "Refreshed live ChowTrek data."
             : "Refreshed local demo data.")
       );

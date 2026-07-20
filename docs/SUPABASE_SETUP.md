@@ -114,6 +114,16 @@ Connected project discovered through the Supabase app:
    server-side transaction query API, checks the paid amount, then calls the service-role-only
    Supabase settlement function.
 
+   In Monnify, set the Transaction Completion webhook URL to:
+
+   ```text
+   https://chowtrek-landing.vercel.app/api/monnify-webhook
+   ```
+
+   Production webhooks are verified with the `monnify-signature` header and the Monnify secret
+   key. Sandbox webhooks may omit that header, so the webhook still re-queries Monnify before
+   settling any order or wallet top-up.
+
 ## App Behavior
 
 The app attempts to load live data from Supabase when both URL and anon key are present.
@@ -137,3 +147,4 @@ After Google sign-in, these app actions attempt to sync with Supabase:
 - Load and approve admin queues through admin-only RLS policies.
 
 Realtime subscriptions refresh the app snapshot when key commerce tables change.
+Pull-to-refresh also asks Vercel to verify pending Monnify card orders before reloading the order list.
