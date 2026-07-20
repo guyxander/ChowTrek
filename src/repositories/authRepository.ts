@@ -88,6 +88,39 @@ export async function getCurrentSessionIdentity(): Promise<string | null> {
   return session?.user ? getUserIdentity(session.user) : null;
 }
 
+export async function getCurrentUserAdminAccess(): Promise<boolean> {
+  if (!supabase) {
+    return false;
+  }
+
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data.user) {
+    return false;
+  }
+
+  const metadataRoles = data.user.app_metadata?.roles;
+
+  if (
+    Array.isArray(metadataRoles) &&
+    metadataRoles.some((role) => role === "admin" || role === "superadmin")
+  ) {
+    return true;
+  }
+
+  const roleResult = await supabase
+    .from("profile_roles")
+    .select("role,is_approved")
+    .eq("profile_id", data.user.id)
+    .eq("role", "admin");
+
+  if (roleResult.error) {
+    return false;
+  }
+
+  return roleResult.data.some((role) => role.role === "admin" && role.is_approved);
+}
+
 export async function signOut(): Promise<AuthActionResult> {
   if (!supabase) {
     return { ok: true, message: "Mock mode signed out." };

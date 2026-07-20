@@ -9,7 +9,7 @@ stable
 security definer
 set search_path = public
 as $$
-  select coalesce((select auth.jwt() -> 'app_metadata' -> 'roles'), '[]'::jsonb) ? 'admin'
+  select coalesce((select auth.jwt() -> 'app_metadata' -> 'roles'), '[]'::jsonb) ?| array['admin', 'superadmin']
     or exists (
       select 1
       from public.profile_roles role_record

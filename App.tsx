@@ -34,6 +34,7 @@ import {
 import { WalletScreen } from "./src/screens/WalletScreen";
 import { createCheckoutOrder } from "./src/repositories/checkoutRepository";
 import { getInitialCommerceSnapshot, loadCommerceSnapshot } from "./src/repositories/commerceSnapshot";
+import { getCurrentUserAdminAccess } from "./src/repositories/authRepository";
 import {
   createSavedAddress,
   deleteSavedAddress,
@@ -152,6 +153,7 @@ export default function App() {
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("Pay with card");
   const [wallets, setWallets] = useState<Record<WalletRole, WalletSummary>>(initialWallets);
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>(fallbackAddresses);
+  const [canOpenAdminDashboard, setCanOpenAdminDashboard] = useState(false);
   const [isAgentAvailable, setIsAgentAvailable] = useState(true);
   const [claimedOpportunityIds, setClaimedOpportunityIds] = useState<string[]>([]);
   const [pickedUpOpportunityIds, setPickedUpOpportunityIds] = useState<string[]>([]);
@@ -203,6 +205,7 @@ export default function App() {
     applySnapshot();
     refreshWallets();
     refreshSavedAddresses();
+    refreshAdminAccess();
     const unsubscribe = subscribeToCommerceChanges(refreshFromRealtime, (message) => {
       if (isMounted) {
         setDataNotice(message);
@@ -403,7 +406,32 @@ export default function App() {
   }
 
   function changeActiveTab(tab: TabKey) {
+    if (tab === "admin") {
+      void openAdminDashboard();
+      return;
+    }
+
     navigateTo(tab);
+  }
+
+  async function refreshAdminAccess() {
+    const hasAccess = await getCurrentUserAdminAccess();
+    setCanOpenAdminDashboard(hasAccess);
+    return hasAccess;
+  }
+
+  async function openAdminDashboard() {
+    const hasAccess = canOpenAdminDashboard || (await refreshAdminAccess());
+
+    if (!hasAccess) {
+      Alert.alert(
+        "Admin access required",
+        "The admin dashboard is only available to approved ChowTrek admins and superadmins."
+      );
+      return;
+    }
+
+    navigateTo("admin");
   }
 
   async function openPushNotificationSettings() {
@@ -798,6 +826,10 @@ export default function App() {
             {activeTab === "community" ? <CommunityScreen timelineEvents={timelineEvents} /> : null}
             {activeTab === "profile" && profilePanel === "profile" ? (
               <ProfileScreen
+                canOpenAdminDashboard={canOpenAdminDashboard}
+                onAuthStateChange={() => {
+                  void refreshAdminAccess();
+                }}
                 onOpenAddresses={() => navigateTo("profile", "addresses")}
                 onOpenEdit={() => navigateTo("profile", "edit")}
                 onOpenFavorites={() => navigateTo("profile", "favorites")}

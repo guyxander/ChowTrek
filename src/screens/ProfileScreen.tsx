@@ -51,7 +51,9 @@ const legalLinks = [
 ];
 
 type Props = {
+  canOpenAdminDashboard: boolean;
   onOpenAddresses: () => void;
+  onAuthStateChange: () => void;
   onOpenFavorites: () => void;
   onOpenInvite: () => void;
   onOpenEdit: () => void;
@@ -64,6 +66,8 @@ type Props = {
 };
 
 export function ProfileScreen({
+  canOpenAdminDashboard,
+  onAuthStateChange,
   onOpenAddresses,
   onOpenEdit,
   onOpenFavorites,
@@ -94,6 +98,7 @@ export function ProfileScreen({
     setMessage(result.message);
     if (result.ok && result.identity) {
       setSignedInIdentity(result.identity);
+      onAuthStateChange();
     }
     setIsSending(false);
   }
@@ -104,6 +109,7 @@ export function ProfileScreen({
     setMessage(result.message);
     if (result.ok) {
       setSignedInIdentity(null);
+      onAuthStateChange();
     }
     setIsSending(false);
   }
@@ -180,7 +186,9 @@ export function ProfileScreen({
       <View style={styles.roleGrid}>
         <RoleButton icon="storefront" label="Merchant" onPress={handleMerchantActivation} />
         <RoleButton icon="bicycle" label="Delivery" onPress={handleAgentActivation} />
-        <RoleButton icon="shield-checkmark" label="Admin" onPress={() => onOpenRole("admin")} />
+        {canOpenAdminDashboard ? (
+          <RoleButton icon="shield-checkmark" label="Admin" onPress={() => onOpenRole("admin")} />
+        ) : null}
       </View>
 
       <View style={styles.sectionHeaderRow}>
