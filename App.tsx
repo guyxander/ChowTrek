@@ -17,6 +17,7 @@ import { RoleDashboardNav } from "./src/components/RoleDashboardNav";
 import { AgentScreen } from "./src/screens/AgentScreen";
 import { AdminScreen } from "./src/screens/AdminScreen";
 import { AddressesScreen } from "./src/screens/AddressesScreen";
+import { AuthGateScreen } from "./src/screens/AuthGateScreen";
 import { CommunityScreen } from "./src/screens/CommunityScreen";
 import { DiscoverScreen } from "./src/screens/DiscoverScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
@@ -34,7 +35,10 @@ import {
 import { WalletScreen } from "./src/screens/WalletScreen";
 import { createCheckoutOrder } from "./src/repositories/checkoutRepository";
 import { getInitialCommerceSnapshot, loadCommerceSnapshot } from "./src/repositories/commerceSnapshot";
-import { getCurrentUserAdminAccess } from "./src/repositories/authRepository";
+import {
+  getCurrentSessionIdentity,
+  getCurrentUserAdminAccess
+} from "./src/repositories/authRepository";
 import {
   createSavedAddress,
   deleteSavedAddress,
@@ -129,6 +133,8 @@ type AppRoute = {
 export default function App() {
   const initialSnapshot = getInitialCommerceSnapshot();
   const [activeTab, setActiveTab] = useState<TabKey>("home");
+  const [signedInIdentity, setSignedInIdentity] = useState<string | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [profilePanel, setProfilePanel] = useState<ProfilePanel>("profile");
   const [routeHistory, setRouteHistory] = useState<AppRoute[]>([]);
   const [merchantSection, setMerchantSection] = useState<MerchantDashboardSection>("home");
@@ -160,6 +166,7 @@ export default function App() {
   const [arrivedOpportunityIds, setArrivedOpportunityIds] = useState<string[]>([]);
   const [deliveredOpportunityIds, setDeliveredOpportunityIds] = useState<string[]>([]);
   const [isRefreshingLiveData, setIsRefreshingLiveData] = useState(false);
+  const showRoleDashboardNav = isRoleDashboard && Boolean(signedInIdentity);
 
   useEffect(() => {
     let isMounted = true;
@@ -203,6 +210,7 @@ export default function App() {
     };
 
     applySnapshot();
+    void refreshAuthIdentity();
     refreshWallets();
     refreshSavedAddresses();
     refreshAdminAccess();
@@ -246,6 +254,34 @@ export default function App() {
     ]);
 
     setWallets({ customer, merchant, agent, admin });
+  }
+
+  async function refreshAuthIdentity() {
+    const identity = await getCurrentSessionIdentity();
+    setSignedInIdentity(identity);
+    setIsCheckingAuth(false);
+
+    if (!identity) {
+      setCanOpenAdminDashboard(false);
+      setProfilePanel("profile");
+    }
+
+    return identity;
+  }
+
+  function handleSignedIn(identity: string) {
+    setSignedInIdentity(identity);
+    setProfilePanel("profile");
+    void refreshAdminAccess();
+    void refreshLiveData();
+  }
+
+  async function handleAuthStateChange() {
+    const identity = await refreshAuthIdentity();
+    if (identity) {
+      void refreshAdminAccess();
+      void refreshLiveData();
+    }
   }
 
   async function refreshSavedAddresses() {
@@ -421,6 +457,11 @@ export default function App() {
   }
 
   async function openAdminDashboard() {
+    if (!signedInIdentity) {
+      navigateTo("profile");
+      return;
+    }
+
     const hasAccess = canOpenAdminDashboard || (await refreshAdminAccess());
 
     if (!hasAccess) {
@@ -752,7 +793,14 @@ export default function App() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor={colors.surface} style="dark" translucent={false} />
       <View style={styles.app}>
-        {activeTab === "home" ? (
+        {!signedInIdentity ? (
+          <View style={[styles.content, styles.authOnlyContent]}>
+            {isCheckingAuth ? (
+              <Text style={styles.dataNotice}>Checking your ChowTrek session...</Text>
+            ) : null}
+            <AuthGateScreen onSignedIn={handleSignedIn} />
+          </View>
+        ) : activeTab === "home" ? (
           <View style={[styles.content, styles.fixedCustomerContent]}>
             <HomeScreen
               addresses={savedAddresses}
@@ -828,7 +876,7 @@ export default function App() {
               <ProfileScreen
                 canOpenAdminDashboard={canOpenAdminDashboard}
                 onAuthStateChange={() => {
-                  void refreshAdminAccess();
+                  void handleAuthStateChange();
                 }}
                 onOpenAddresses={() => navigateTo("profile", "addresses")}
                 onOpenEdit={() => navigateTo("profile", "edit")}
@@ -839,6 +887,7 @@ export default function App() {
                 onOpenSettings={() => navigateTo("profile", "settings")}
                 onOpenSupport={() => navigateTo("profile", "support")}
                 onOpenWallet={openCustomerWallet}
+                signedInIdentity={signedInIdentity}
                 wallet={wallets.customer}
               />
             ) : null}
@@ -938,8 +987,10 @@ export default function App() {
             ) : null}
           </ScrollView>
         )}
-        {!isRoleDashboard ? <BottomNav activeTab={activeTab} onChange={changeActiveTab} /> : null}
-        {isRoleDashboard ? (
+        {signedInIdentity && !showRoleDashboardNav ? (
+          <BottomNav activeTab={activeTab} onChange={changeActiveTab} />
+        ) : null}
+        {showRoleDashboardNav ? (
           <View style={styles.roleNavWrap}>
             <RoleDashboardNav
               items={
@@ -1035,6 +1086,10 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 104
+  },
+  authOnlyContent: {
+    flex: 1,
+    paddingBottom: 16
   },
   dataNotice: {
     color: colors.muted,

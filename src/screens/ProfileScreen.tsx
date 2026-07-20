@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Image,
   Linking,
@@ -11,8 +11,6 @@ import {
 } from "react-native";
 
 import {
-  getCurrentSessionIdentity,
-  signInWithGoogle,
   signOut
 } from "../repositories/authRepository";
 import {
@@ -52,6 +50,7 @@ const legalLinks = [
 
 type Props = {
   canOpenAdminDashboard: boolean;
+  signedInIdentity: string;
   onOpenAddresses: () => void;
   onAuthStateChange: () => void;
   onOpenFavorites: () => void;
@@ -77,45 +76,16 @@ export function ProfileScreen({
   onOpenSettings,
   onOpenSupport,
   onOpenWallet,
+  signedInIdentity,
   wallet
 }: Props) {
-  const [message, setMessage] = useState("Sign in to sync your ChowTrek profile.");
+  const [message, setMessage] = useState("Your profile is synced with Google.");
   const [isSending, setIsSending] = useState(false);
-  const [signedInIdentity, setSignedInIdentity] = useState<string | null>(null);
-
-  useEffect(() => {
-    getCurrentSessionIdentity().then((identity) => {
-      setSignedInIdentity(identity);
-      if (identity) {
-        setMessage("Your profile is synced with Google.");
-      }
-    });
-  }, []);
-
-  async function handleGoogleSignIn() {
-    setIsSending(true);
-    const result = await signInWithGoogle();
-    setMessage(result.message);
-    if (result.ok && result.identity) {
-      setSignedInIdentity(result.identity);
-      onAuthStateChange();
-    }
-    setIsSending(false);
-  }
 
   async function handleSignOut() {
     setIsSending(true);
-    setSignedInIdentity(null);
-    onAuthStateChange();
     const result = await signOut();
     setMessage(result.message);
-    if (!result.ok) {
-      const identity = await getCurrentSessionIdentity();
-      setSignedInIdentity(identity);
-      if (!identity) {
-        setMessage("Signed out locally.");
-      }
-    }
     onAuthStateChange();
     setIsSending(false);
   }
@@ -157,21 +127,19 @@ export function ProfileScreen({
             <Ionicons color="#ffffff" name="pencil" size={14} />
           </TouchableOpacity>
         </View>
-        <Text style={styles.profileName}>{signedInIdentity ?? "ChowTrek Guest"}</Text>
-        {signedInIdentity ? (
-          <View style={styles.memberBadge}>
-            <Ionicons color="#783200" name="shield-checkmark" size={14} />
-            <Text style={styles.memberBadgeText}>Member since Oct 2023</Text>
-          </View>
-        ) : null}
+        <Text style={styles.profileName}>{signedInIdentity}</Text>
+        <View style={styles.memberBadge}>
+          <Ionicons color="#783200" name="shield-checkmark" size={14} />
+          <Text style={styles.memberBadgeText}>Member since Oct 2023</Text>
+        </View>
         <TouchableOpacity
           disabled={isSending}
-          onPress={signedInIdentity ? handleSignOut : handleGoogleSignIn}
+          onPress={handleSignOut}
           style={[styles.googleButton, isSending ? styles.disabledButton : null]}
         >
-          <Ionicons color="#ffffff" name={signedInIdentity ? "log-out-outline" : "logo-google"} size={18} />
+          <Ionicons color="#ffffff" name="log-out-outline" size={18} />
           <Text style={styles.googleButtonText}>
-            {isSending ? "Please wait..." : signedInIdentity ? "Logout" : "Continue with Google"}
+            {isSending ? "Please wait..." : "Logout"}
           </Text>
         </TouchableOpacity>
         <Text style={styles.statusText}>{message}</Text>
@@ -199,38 +167,34 @@ export function ProfileScreen({
         ) : null}
       </View>
 
-      {signedInIdentity ? (
-        <>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Favorite Merchants</Text>
-            <TouchableOpacity onPress={onOpenFavorites}>
-              <Text style={styles.viewAllText}>View All</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView
-            contentContainerStyle={styles.favoriteList}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          >
-            {favoriteMerchants.map((merchant) => (
-              <View key={merchant.id} style={styles.merchantCard}>
-                <Image source={{ uri: merchant.image }} style={styles.merchantImage} />
-                <View style={styles.merchantMeta}>
-                  <Text numberOfLines={1} style={styles.merchantName}>
-                    {merchant.name}
-                  </Text>
-                  <View style={styles.ratingRow}>
-                    <Ionicons color={colors.orange} name="star" size={14} />
-                    <Text style={styles.ratingText}>
-                      {merchant.rating} - {merchant.distance}
-                    </Text>
-                  </View>
-                </View>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionTitle}>Favorite Merchants</Text>
+        <TouchableOpacity onPress={onOpenFavorites}>
+          <Text style={styles.viewAllText}>View All</Text>
+        </TouchableOpacity>
+      </View>
+      <ScrollView
+        contentContainerStyle={styles.favoriteList}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+      >
+        {favoriteMerchants.map((merchant) => (
+          <View key={merchant.id} style={styles.merchantCard}>
+            <Image source={{ uri: merchant.image }} style={styles.merchantImage} />
+            <View style={styles.merchantMeta}>
+              <Text numberOfLines={1} style={styles.merchantName}>
+                {merchant.name}
+              </Text>
+              <View style={styles.ratingRow}>
+                <Ionicons color={colors.orange} name="star" size={14} />
+                <Text style={styles.ratingText}>
+                  {merchant.rating} - {merchant.distance}
+                </Text>
               </View>
-            ))}
-          </ScrollView>
-        </>
-      ) : null}
+            </View>
+          </View>
+        ))}
+      </ScrollView>
 
       <View style={styles.menuCard}>
         <MenuRow icon="wallet-outline" label="Wallet" onPress={onOpenWallet} />
@@ -238,9 +202,7 @@ export function ProfileScreen({
         <MenuRow icon="settings-outline" label="Settings" onPress={onOpenSettings} />
         <MenuRow icon="help-circle-outline" label="Help & Support" onPress={onOpenSupport} />
         <MenuRow icon="people-outline" label="Invite Friends" onPress={onOpenInvite} />
-        {signedInIdentity ? (
-          <MenuRow danger icon="log-out-outline" label="Logout" onPress={handleSignOut} />
-        ) : null}
+        <MenuRow danger icon="log-out-outline" label="Logout" onPress={handleSignOut} />
       </View>
 
       <View style={styles.footer}>
